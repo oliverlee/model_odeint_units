@@ -6,4 +6,7 @@ cc_binary(
         "main.cc",
     ],
     includes = ["include"],
+    deps = [
+        "@boost//:numeric_odeint",
+    ],
 )
