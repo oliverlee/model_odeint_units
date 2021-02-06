@@ -8,5 +8,15 @@ cc_binary(
     includes = ["include"],
     deps = [
         "@boost//:numeric_odeint",
+        "@extern//:units",
+    ],
+    defines = [
+        "DISABLE_PREDEFINED_UNITS",
+        "ENABLE_PREDEFINED_LENGTH_UNITS",
+        "ENABLE_PREDEFINED_TIME_UNITS",
+        "ENABLE_PREDEFINED_VELOCITY_UNITS",
+        "ENABLE_PREDEFINED_ACCELERATION_UNITS",
+        "ENABLE_PREDEFINED_ANGLE_UNITS",
+        "ENABLE_PREDEFINED_ANGULAR_VELOCITY_UNITS",
     ],
 )

@@ -9,3 +9,9 @@ git_repository(
 
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 boost_deps()
+
+new_local_repository(
+    name = "extern",
+    path = "extern",
+    build_file = "extern/BUILD",
+)

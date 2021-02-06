@@ -1,6 +1,7 @@
 #pragma once
 
 #include "type_traits.h"
+#include "units.h"
 
 #include <array>
 #include <cmath>
@@ -69,10 +70,10 @@ struct model {
 
     struct input {
         /// Acceleration of center of mass in the same direction as velocity [m/s^2]
-        Real a;
+        units::unit_t<units::acceleration::meters_per_second_squared, Real> a;
 
         /// Front steering angle [rad]
-        Real deltaf;
+        units::unit_t<units::angle::radian, Real> deltaf;
     };
 
     /// Vehicle course, relative to yaw
@@ -81,12 +82,12 @@ struct model {
     static auto state_transition(input u)
     {
         return [u](const state& x, state& dxdt, Real /* t */) {
-            const auto beta = course(u.deltaf);
+            const auto beta = course(u.deltaf.template to<Real>());
 
             dxdt.x() = x.v() * cos(x.yaw() + beta);
             dxdt.y() = x.v() * sin(x.yaw() + beta);
             dxdt.yaw() = x.v() / lr * sin(beta);
-            dxdt.v() = u.a;
+            dxdt.v() = u.a.template to<Real>();
         };
     }
 };
