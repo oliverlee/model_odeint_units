@@ -10,7 +10,7 @@ cc_binary(
     includes = ["include"],
     deps = [
         "@boost//:numeric_odeint",
-        "@extern//:units",
+        "@units",
     ],
     defines = [
         "DISABLE_PREDEFINED_UNITS",

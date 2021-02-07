@@ -1,3 +1,4 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
@@ -14,4 +15,12 @@ new_local_repository(
     name = "extern",
     path = "extern",
     build_file = "extern/BUILD",
+)
+
+http_archive(
+    name = "units",
+    url = "https://github.com/nholthaus/units/archive/ea6d126942cb3225a341568ab57ec52513977875.tar.gz",
+    sha256 = "38efce0d968438c3602524d9715f25ffded91256c85527492436b0eb4fa80fee",
+    strip_prefix = "units-ea6d126942cb3225a341568ab57ec52513977875",
+    build_file = "@//:units.BUILD"
 )

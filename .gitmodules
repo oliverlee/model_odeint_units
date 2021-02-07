@@ -1,3 +1,0 @@
-[submodule "extern/units"]
-	path = extern/units
-	url = https://github.com/nholthaus/units.git
