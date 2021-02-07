@@ -9,6 +9,7 @@
 #include <vector>
 
 namespace {
+namespace odeint = boost::numeric::odeint;
 
 template <class Iterator>
 auto adapt_rangepair(std::pair<Iterator, Iterator> rp)
@@ -24,11 +25,27 @@ auto adapt_rangepair(std::pair<Iterator, Iterator> rp)
     return range{rp.first, rp.second};
 }
 
+template <class Model, template <class...> class Stepper>
+auto make_step_range(typename Model::state& x,
+                     const typename Model::input& u,
+                     typename Model::duration_type t_span,
+                     typename Model::duration_type dt)
+{
+    using Real = typename Model::real_type;
+
+    return adapt_rangepair(odeint::make_const_step_time_range(
+        Stepper<typename Model::state, Real, typename Model::deriv, Real>{},
+        Model::state_transition(u),
+        x,
+        Real{0},
+        t_span.template to<Real>(),
+        dt.template to<Real>()));
+}
+
 }  // namespace
 
 int main()
 {
-    namespace odeint = boost::numeric::odeint;
     using namespace units::literals;
 
     using Model = dyn::model<double, std::ratio<1105, 1000>, std::ratio<1738, 1000>>;
@@ -36,12 +53,10 @@ int main()
     std::cout << std::left << std::setprecision(3) << std::fixed;
     std::cout << Model{} << std::endl;
 
-    auto stepper = odeint::runge_kutta4<Model::state, Model::real_type, Model::deriv>{};
-    const auto f = Model::state_transition(Model::input{0_mps_sq, 0.2_rad});
+    const auto u = Model::input{0_mps_sq, 0.2_rad};
     auto x = Model::state{0_m, 0_m, 0_rad, 10_mps};
 
-    for (auto s :
-         adapt_rangepair(odeint::make_const_step_time_range(stepper, f, x, 0.0, 3.0, 0.1))) {
+    for (auto s : make_step_range<Model, odeint::runge_kutta4>(x, u, 3_s, 100_ms)) {
         std::cout << "t=" << s.second << ": " << s.first << '\n';
     }
 }

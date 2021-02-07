@@ -21,6 +21,7 @@ template <class Real, class Lf, class Lr>
 struct model {
     using real_type = Real;
 
+    using duration_type = units::unit_t<units::time::second, Real>;
     using length_type = units::unit_t<units::length::meter, Real>;
     using velocity_type = units::unit_t<units::velocity::meters_per_second, Real>;
     using acceleration_type = units::unit_t<units::acceleration::meters_per_second_squared, Real>;
