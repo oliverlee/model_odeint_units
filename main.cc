@@ -36,7 +36,7 @@ int main()
     std::cout << std::left << std::setprecision(3) << std::fixed;
     std::cout << Model{} << std::endl;
 
-    auto stepper = odeint::runge_kutta4<Model::state>{};
+    auto stepper = odeint::runge_kutta4<Model::state, Model::real_type, Model::deriv>{};
     const auto f = Model::state_transition(Model::input{0_mps_sq, 0.2_rad});
     auto x = Model::state{0_m, 0_m, 0_rad, 10_mps};
 
