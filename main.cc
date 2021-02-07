@@ -1,6 +1,5 @@
 #include "boost/numeric/odeint.hpp"
 #include "model.h"
-#include "unit_view.h"
 #include "units.h"
 
 #include <iostream>

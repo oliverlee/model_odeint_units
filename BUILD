@@ -3,7 +3,7 @@ cc_binary(
     srcs = [
         "include/model.h",
         "include/type_traits.h",
-        "include/unit_view.h",
+        "include/unit_proxy.h",
         "main.cc",
     ],
     includes = ["include"],

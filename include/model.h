@@ -1,7 +1,7 @@
 #pragma once
 
 #include "type_traits.h"
-#include "unit_view.h"
+#include "unit_proxy.h"
 #include "units.h"
 
 #include <array>
@@ -52,19 +52,19 @@ struct model {
         {}
 
         /// X-coordinate of center of mass w.r.t inertia frame
-        constexpr auto x() noexcept { return unit_view<x_type>{this->at(0)}; }
+        constexpr auto x() noexcept { return unit_proxy<x_type>{this->at(0)}; }
         constexpr auto x() const noexcept { return x_type{this->at(0)}; }
 
         /// Y-coordinate of center of mass w.r.t inertia frame
-        constexpr auto y() noexcept { return unit_view<y_type>{this->at(1)}; }
+        constexpr auto y() noexcept { return unit_proxy<y_type>{this->at(1)}; }
         constexpr auto y() const noexcept { return y_type{this->at(1)}; }
 
         /// Yaw angle (inertial heading)
-        constexpr auto yaw() noexcept { return unit_view<yaw_type>{this->at(2)}; }
+        constexpr auto yaw() noexcept { return unit_proxy<yaw_type>{this->at(2)}; }
         constexpr auto yaw() const noexcept { return yaw_type{this->at(2)}; }
 
         /// Velocity of center of mass
-        constexpr auto v() noexcept { return unit_view<v_type>{this->at(3)}; }
+        constexpr auto v() noexcept { return unit_proxy<v_type>{this->at(3)}; }
         constexpr auto v() const noexcept { return v_type{this->at(3)}; }
     };
 
