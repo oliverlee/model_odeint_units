@@ -1,5 +1,6 @@
 #include "boost/numeric/odeint.hpp"
-#include "include/model.h"
+#include "model.h"
+#include "unit_view.h"
 #include "units.h"
 
 #include <iostream>
@@ -37,10 +38,10 @@ int main()
 
     auto stepper = odeint::runge_kutta4<Model::state>{};
     const auto f = Model::state_transition(Model::input{0_mps_sq, 0.2_rad});
-    auto x = Model::state{0.0, 0.0, 0.0, 10.0};
+    auto x = Model::state{0_m, 0_m, 0_rad, 10_mps};
 
     for (auto s :
-         adapt_rangepair(odeint::make_const_step_time_range(stepper, f, x, 0.0, 10.0, 0.1))) {
+         adapt_rangepair(odeint::make_const_step_time_range(stepper, f, x, 0.0, 3.0, 0.1))) {
         std::cout << "t=" << s.second << ": " << s.first << '\n';
     }
 }

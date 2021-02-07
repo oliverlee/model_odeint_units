@@ -1,6 +1,7 @@
 #pragma once
 
 #include "type_traits.h"
+#include "unit_view.h"
 #include "units.h"
 
 #include <array>
@@ -18,6 +19,11 @@ namespace dyn {
 /// @note Floating-point types cannot be non-type template parameters until C++20.
 template <class Real, class Lf, class Lr>
 struct model {
+    using length_type = units::unit_t<units::length::meter, Real>;
+    using angle_type = units::unit_t<units::angle::radian, Real>;
+    using velocity_type = units::unit_t<units::velocity::meters_per_second, Real>;
+    using acceleration_type = units::unit_t<units::acceleration::meters_per_second_squared, Real>;
+
     /// Distance from center of mass to front axle [m]
     static constexpr auto lf = Real{Lf::num} / Real{Lf::den};
     /// Distance from center of mass to rear axle [m]
@@ -27,67 +33,62 @@ struct model {
         using model_type = model<Real, Lf, Lr>;
 
         constexpr state() = default;
-        constexpr state(Real x, Real y, Real yaw, Real v) : std::array<Real, 4>{x, y, yaw, v} {}
+        constexpr state(length_type x, length_type y, angle_type yaw, velocity_type v)
+            : std::array<Real, 4>{x.value(), y.value(), yaw.value(), v.value()}
+        {}
 
-        /// X-coordinate of center of mass w.r.t inertia frame [m]
-        constexpr auto x() noexcept -> Real& { return x_impl(this); }
-        constexpr auto x() const noexcept -> const Real& { return x_impl(this); }
-
-        /// Y-coordinate of center of mass w.r.t inertia frame [m]
-        constexpr auto y() noexcept -> Real& { return y_impl(this); }
-        constexpr auto y() const noexcept -> const Real& { return y_impl(this); }
-
-        /// Yaw angle (inertial heading) [rad]
-        constexpr auto yaw() noexcept -> Real& { return yaw_impl(this); }
-        constexpr auto yaw() const noexcept -> const Real& { return yaw_impl(this); }
-
-        /// Velocity of center of mass [m/s]
-        constexpr auto v() noexcept -> Real& { return v_impl(this); }
-        constexpr auto v() const noexcept -> const Real& { return v_impl(this); }
-
-      private:
-        template <class Self>
-        static constexpr auto x_impl(Self self) noexcept -> auto&
+        /// X-coordinate of center of mass w.r.t inertia frame
+        constexpr auto x() noexcept -> unit_view<length_type> { return this->operator[](0); }
+        constexpr auto x() const noexcept -> length_type
         {
-            return self->at(0);
+            return length_type{this->operator[](0)};
         }
-        template <class Self>
-        static constexpr auto y_impl(Self self) noexcept -> auto&
+
+        /// Y-coordinate of center of mass w.r.t inertia frame
+        constexpr auto y() noexcept -> unit_view<length_type> { return this->operator[](1); }
+        constexpr auto y() const noexcept -> length_type
         {
-            return self->at(1);
+            return length_type{this->operator[](1)};
         }
-        template <class Self>
-        static constexpr auto yaw_impl(Self self) noexcept -> auto&
+
+        /// Yaw angle (inertial heading)
+        constexpr auto yaw() noexcept -> unit_view<angle_type> { return this->operator[](2); }
+        constexpr auto yaw() const noexcept -> angle_type
         {
-            return self->at(2);
+            return angle_type{this->operator[](2)};
         }
-        template <class Self>
-        static constexpr auto v_impl(Self self) noexcept -> auto&
+
+        /// Velocity of center of mass
+        constexpr auto v() noexcept -> unit_view<velocity_type> { return this->operator[](3); }
+        constexpr auto v() const noexcept -> velocity_type
         {
-            return self->at(3);
+            return velocity_type{this->operator[](3)};
         }
     };
 
     struct input {
         /// Acceleration of center of mass in the same direction as velocity [m/s^2]
-        units::unit_t<units::acceleration::meters_per_second_squared, Real> a;
+        acceleration_type a;
 
         /// Front steering angle [rad]
-        units::unit_t<units::angle::radian, Real> deltaf;
+        angle_type deltaf;
     };
 
     /// Vehicle course, relative to yaw
-    static auto course(Real deltaf) -> Real { return std::atan(lr / (lf + lr) * std::tan(deltaf)); }
+    static auto course(angle_type deltaf) -> angle_type
+    {
+        return units::math::atan(lr / (lf + lr) * units::math::tan(deltaf));
+    }
 
     static auto state_transition(input u)
     {
         return [u](const state& x, state& dxdt, Real /* t */) {
-            const auto beta = course(u.deltaf.template to<Real>());
+            const auto beta = course(u.deltaf);
 
-            dxdt.x() = x.v() * cos(x.yaw() + beta);
-            dxdt.y() = x.v() * sin(x.yaw() + beta);
-            dxdt.yaw() = x.v() / lr * sin(beta);
-            dxdt.v() = u.a.template to<Real>();
+            dxdt[0] = (x.v() * units::math::cos(x.yaw() + beta)).value();
+            dxdt[1] = (x.v() * units::math::sin(x.yaw() + beta)).value();
+            dxdt[2] = (x.v() / lr * units::math::sin(beta)).value();
+            dxdt[3] = u.a.value();
         };
     }
 };
