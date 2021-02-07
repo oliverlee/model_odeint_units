@@ -1,6 +1,7 @@
 cc_binary(
     name = "main",
     srcs = [
+        "include/duration_adaptor.h",
         "include/model.h",
         "include/type_traits.h",
         "include/unit_view.h",
