@@ -1,6 +1,7 @@
 cc_binary(
     name = "main",
     srcs = [
+        "include/iterator.h",
         "include/model.h",
         "include/type_traits.h",
         "include/unit_proxy.h",

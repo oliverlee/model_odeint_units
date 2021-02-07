@@ -1,4 +1,5 @@
 #include "boost/numeric/odeint.hpp"
+#include "iterator.h"
 #include "model.h"
 #include "units.h"
 
@@ -9,20 +10,6 @@
 
 namespace {
 namespace odeint = boost::numeric::odeint;
-
-template <class Iterator>
-auto adapt_rangepair(std::pair<Iterator, Iterator> rp)
-{
-    struct range {
-        decltype(rp.first) begin_;
-        decltype(rp.second) end_;
-
-        auto begin() { return begin_; }
-        auto end() { return end_; }
-    };
-
-    return range{rp.first, rp.second};
-}
 
 template <class Model, template <class...> class Stepper>
 auto make_step_range(typename Model::state& x,
@@ -46,6 +33,7 @@ auto make_step_range(typename Model::state& x,
 int main()
 {
     using namespace units::literals;
+    using namespace std::literals::chrono_literals;
 
     using Model = dyn::model<double, std::ratio<1105, 1000>, std::ratio<1738, 1000>>;
 
@@ -55,7 +43,7 @@ int main()
     const auto u = Model::input{0_mps_sq, 0.2_rad};
     auto x = Model::state{0_m, 0_m, 0_rad, 10_mps};
 
-    for (auto s : make_step_range<Model, odeint::runge_kutta4>(x, u, 3_s, 100_ms)) {
-        std::cout << "t=" << s.second << ": " << s.first << '\n';
+    for (auto s : dyn::make_owning_step_range<Model, odeint::runge_kutta4>(x, u, 3s, 100ms)) {
+        std::cout << s << std::endl;
     }
 }
