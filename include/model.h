@@ -32,58 +32,43 @@ struct model {
     /// Distance from center of mass to rear axle
     static constexpr length_type lr{Real{Lr::num} / Real{Lr::den}};
 
-    struct state : std::array<Real, 4> {
+    template <class... U>
+    struct state_with : std::array<Real, 4> {
         using model_type = model<Real, Lf, Lr>;
 
-        constexpr state() = default;
-        constexpr state(length_type x, length_type y, angle_type yaw, velocity_type v)
+        using x_type =
+            units::unit_t<units::compound_unit<typename length_type::unit_type, U...>, real_type>;
+        using y_type =
+            units::unit_t<units::compound_unit<typename length_type::unit_type, U...>, real_type>;
+        using yaw_type =
+            units::unit_t<units::compound_unit<typename angle_type::unit_type, U...>, real_type>;
+        using v_type =
+            units::unit_t<units::compound_unit<typename velocity_type::unit_type, U...>, real_type>;
+
+        constexpr state_with() = default;
+        constexpr state_with(x_type x, y_type y, yaw_type yaw, v_type v)
             : std::array<Real, 4>{x.value(), y.value(), yaw.value(), v.value()}
         {}
 
         /// X-coordinate of center of mass w.r.t inertia frame
-        constexpr auto x() noexcept { return unit_view<length_type>{this->at(0)}; }
-        constexpr auto x() const noexcept { return length_type{this->at(0)}; }
+        constexpr auto x() noexcept { return unit_view<x_type>{this->at(0)}; }
+        constexpr auto x() const noexcept { return x_type{this->at(0)}; }
 
         /// Y-coordinate of center of mass w.r.t inertia frame
-        constexpr auto y() noexcept { return unit_view<length_type>{this->at(1)}; }
-        constexpr auto y() const noexcept { return length_type{this->at(1)}; }
+        constexpr auto y() noexcept { return unit_view<y_type>{this->at(1)}; }
+        constexpr auto y() const noexcept { return y_type{this->at(1)}; }
 
         /// Yaw angle (inertial heading)
-        constexpr auto yaw() noexcept { return unit_view<angle_type>{this->at(2)}; }
-        constexpr auto yaw() const noexcept { return angle_type{this->at(2)}; }
+        constexpr auto yaw() noexcept { return unit_view<yaw_type>{this->at(2)}; }
+        constexpr auto yaw() const noexcept { return yaw_type{this->at(2)}; }
 
         /// Velocity of center of mass
-        constexpr auto v() noexcept { return unit_view<velocity_type>{this->at(3)}; }
-        constexpr auto v() const noexcept { return velocity_type{this->at(3)}; }
+        constexpr auto v() noexcept { return unit_view<v_type>{this->at(3)}; }
+        constexpr auto v() const noexcept { return v_type{this->at(3)}; }
     };
 
-    struct deriv : std::array<Real, 4> {
-        using model_type = model<Real, Lf, Lr>;
-
-        constexpr deriv() = default;
-        constexpr deriv(velocity_type x,
-                        velocity_type y,
-                        angular_rate_type yaw,
-                        acceleration_type v)
-            : std::array<Real, 4>{x.value(), y.value(), yaw.value(), v.value()}
-        {}
-
-        /// Time derivative of x-coordinate of center of mass w.r.t inertia frame
-        constexpr auto x() noexcept { return unit_view<velocity_type>{this->at(0)}; }
-        constexpr auto x() const noexcept { return velocity_type{this->at(0)}; }
-
-        /// Time derivative of y-coordinate of center of mass w.r.t inertia frame
-        constexpr auto y() noexcept { return unit_view<velocity_type>{this->at(1)}; }
-        constexpr auto y() const noexcept { return velocity_type{this->at(1)}; }
-
-        /// Time derivative of yaw angle (inertial heading)
-        constexpr auto yaw() noexcept { return unit_view<angular_rate_type>{this->at(2)}; }
-        constexpr auto yaw() const noexcept { return angular_rate_type{this->at(2)}; }
-
-        /// Time derivative of velocity of center of mass
-        constexpr auto v() noexcept { return unit_view<acceleration_type>{this->at(3)}; }
-        constexpr auto v() const noexcept { return acceleration_type{this->at(3)}; }
-    };
+    using state = state_with<>;
+    using deriv = state_with<units::inverse<units::time::second>>;
 
     struct input {
         using model_type = model<Real, Lf, Lr>;
