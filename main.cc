@@ -17,8 +17,8 @@ int main()
     std::cout << std::left << std::setprecision(3) << std::fixed;
     std::cout << Model{} << std::endl;
 
-    for (auto s : dyn::make_owning_step_range<Model, odeint::runge_kutta4>(
+    for (auto result : dyn::make_owning_step_range<Model, odeint::runge_kutta4>(
              {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 3s, 100ms)) {
-        std::cout << s << std::endl;
+        std::cout << units::time::second_t{result.first} << ": " << result.second << std::endl;
     }
 }

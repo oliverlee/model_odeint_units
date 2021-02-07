@@ -117,7 +117,7 @@ auto operator<<(std::ostream& os, const State& s)
     -> std::enable_if_t<stdx::is_specialization_of<typename State::model_type, model>::value,
                         std::ostream&>
 {
-    return os << "state {" << s.x() << ", " << s.y() << ", " << s.yaw() << ", " << s.v() << "}";
+    return os << "{" << s.x() << ", " << s.y() << ", " << s.yaw() << ", " << s.v() << "}";
 }
 
 }  // namespace dyn

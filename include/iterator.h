@@ -3,6 +3,7 @@
 #include "type_traits.h"
 
 #include <chrono>
+#include <functional>
 #include <iterator>
 #include <utility>
 
@@ -36,9 +37,10 @@ class owning_step_iterator {
     using iterator = owning_step_iterator<Model, Stepper, Duration>;
 
     using difference_type = std::ptrdiff_t;
-    using value_type = typename Model::state;
+    using value_type = std::pair<duration_type, typename Model::state>;
     using pointer = std::add_pointer_t<value_type>;
-    using reference = std::add_lvalue_reference_t<value_type>;
+    using reference = std::pair<std::add_lvalue_reference_t<duration_type>,
+                                std::add_lvalue_reference_t<typename Model::state>>;
     using iterator_category = std::input_iterator_tag;
 
     owning_step_iterator(const typename Model::state& x0,
@@ -77,7 +79,10 @@ class owning_step_iterator {
         return !(*this == other);
     }
 
-    auto operator*() -> reference
+    auto operator*() -> reference { return std::make_pair(std::ref(elapsed_), std::ref(state_)); }
+
+  private:
+    auto increment() -> void
     {
         const auto as_real = [](auto duration) {
             return std::chrono::duration_cast<std::chrono::duration<typename Model::real_type>>(
@@ -89,11 +94,9 @@ class owning_step_iterator {
         const auto dt = as_real(step_);
 
         stepper_type{}.do_step(system_, state_, t, dt);
-        return state_;
-    }
 
-  private:
-    auto increment() -> void { elapsed_ += step_; }
+        elapsed_ += step_;
+    }
 
     auto at_end() const noexcept -> bool { return elapsed_ >= span_; }
 
