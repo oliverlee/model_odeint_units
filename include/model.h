@@ -11,6 +11,22 @@
 
 namespace dyn {
 
+namespace detail {
+
+template <bool InverseTime>
+using time_base =
+    std::conditional_t<InverseTime, units::inverse<units::time::second>, units::time::second>;
+
+template <class BaseUnit, int DerivOrder, class Real>
+using unit_with_deriv_order = units::unit_t<
+    tmp::rebind_outer<
+        tmp::push_front<BaseUnit, tmp::repeat<tmp::abs(DerivOrder), time_base<(DerivOrder > 0)>>>,
+        tmp::list,
+        units::compound_unit>,
+    Real>;
+
+}  // namespace detail
+
 /// Kinematic Bicycle Model
 /// Kong 2015 Kinematic
 /// @tparam Real type
@@ -19,59 +35,85 @@ namespace dyn {
 /// @note Floating-point types cannot be non-type template parameters until C++20.
 template <class Real, class Lf, class Lr>
 struct model {
+  private:
+    template <class... Ts>
+    using unit_t = units::unit_t<Ts...>;
+
+    using second = units::time::second;
+    using meter = units::length::meter;
+    using meters_per_second = units::velocity::meters_per_second;
+    using meters_per_second_squared = units::acceleration::meters_per_second_squared;
+    using radian = units::angle::radian;
+    using radians_per_second = units::angular_velocity::radians_per_second;
+
+  public:
     using real_type = Real;
 
-    using duration_type = units::unit_t<units::time::second, Real>;
-    using length_type = units::unit_t<units::length::meter, Real>;
-    using velocity_type = units::unit_t<units::velocity::meters_per_second, Real>;
-    using acceleration_type = units::unit_t<units::acceleration::meters_per_second_squared, Real>;
-    using angle_type = units::unit_t<units::angle::radian, Real>;
-    using angular_rate_type = units::unit_t<units::angular_velocity::radians_per_second, Real>;
+    using duration_type = unit_t<second, real_type>;
+    using length_type = unit_t<meter, real_type>;
+    using velocity_type = unit_t<meters_per_second, real_type>;
+    using acceleration_type = unit_t<meters_per_second_squared, real_type>;
+    using angle_type = unit_t<radian, real_type>;
+    using angular_rate_type = unit_t<radians_per_second, real_type>;
 
     /// Distance from center of mass to front axle
-    static constexpr length_type lf{Real{Lf::num} / Real{Lf::den}};
+    static constexpr length_type lf{real_type{Lf::num} / real_type{Lf::den}};
     /// Distance from center of mass to rear axle
-    static constexpr length_type lr{Real{Lr::num} / Real{Lr::den}};
+    static constexpr length_type lr{real_type{Lr::num} / real_type{Lr::den}};
 
-    template <unsigned int DerivOrder>
-    struct state_with_deriv_order : std::array<Real, 4> {
+    template <int DerivOrder>
+    struct state_with_deriv_order {
         using model_type = model<Real, Lf, Lr>;
+        using real_type = model_type::real_type;
+        using duration_type = model_type::duration_type;
+
         static constexpr auto deriv_order = DerivOrder;
 
-        template <class BaseUnit>
-        using unit_with_deriv_order = units::unit_t<
-            tmp::rebind_outer<
-                tmp::push_front<BaseUnit,
-                                tmp::repeat<DerivOrder, units::inverse<units::time::second>>>,
-                tmp::list,
-                units::compound_unit>,
-            real_type>;
+        template <int NewOrder>
+        using rebind = state_with_deriv_order<NewOrder>;
 
-        using x_type = unit_with_deriv_order<typename length_type::unit_type>;
-        using y_type = unit_with_deriv_order<typename length_type::unit_type>;
-        using yaw_type = unit_with_deriv_order<typename angle_type::unit_type>;
-        using v_type = unit_with_deriv_order<typename velocity_type::unit_type>;
-
-        constexpr state_with_deriv_order() = default;
-        constexpr state_with_deriv_order(x_type x, y_type y, yaw_type yaw, v_type v)
-            : std::array<Real, 4>{x.value(), y.value(), yaw.value(), v.value()}
-        {}
+        using x_type =
+            detail::unit_with_deriv_order<typename length_type::unit_type, deriv_order, real_type>;
+        using y_type =
+            detail::unit_with_deriv_order<typename length_type::unit_type, deriv_order, real_type>;
+        using yaw_type =
+            detail::unit_with_deriv_order<typename angle_type::unit_type, deriv_order, real_type>;
+        using v_type = detail::
+            unit_with_deriv_order<typename velocity_type::unit_type, deriv_order, real_type>;
 
         /// X-coordinate of center of mass w.r.t inertia frame
-        constexpr auto x() noexcept { return unit_proxy<x_type>{this->at(0)}; }
-        constexpr auto x() const noexcept { return x_type{this->at(0)}; }
+        x_type x;
 
         /// Y-coordinate of center of mass w.r.t inertia frame
-        constexpr auto y() noexcept { return unit_proxy<y_type>{this->at(1)}; }
-        constexpr auto y() const noexcept { return y_type{this->at(1)}; }
+        y_type y;
 
         /// Yaw angle (inertial heading)
-        constexpr auto yaw() noexcept { return unit_proxy<yaw_type>{this->at(2)}; }
-        constexpr auto yaw() const noexcept { return yaw_type{this->at(2)}; }
+        yaw_type yaw;
 
         /// Velocity of center of mass
-        constexpr auto v() noexcept { return unit_proxy<v_type>{this->at(3)}; }
-        constexpr auto v() const noexcept { return v_type{this->at(3)}; }
+        v_type v;
+
+        auto operator+=(const state_with_deriv_order& s) -> state_with_deriv_order&
+        {
+            x += s.x;
+            y += s.y;
+            yaw += s.yaw;
+            v += s.v;
+
+            return *this;
+        }
+
+        auto operator*=(const real_type& a) -> state_with_deriv_order&
+        {
+            const auto k = units::unit_t<units::dimensionless::scalar, real_type>{a};
+
+            x *= k;
+            y *= k;
+            yaw *= k;
+            v *= k;
+
+            return *this;
+        }
     };
 
     using state = state_with_deriv_order<0>;
@@ -95,13 +137,13 @@ struct model {
 
     static auto state_transition(input u)
     {
-        return [u](const state& x, deriv& dxdt, Real /* t */) {
+        return [u](const state& x, deriv& dxdt, duration_type /* t */) {
             const auto beta = course(u.deltaf);
 
-            dxdt.x() = x.v() * units::math::cos(x.yaw() + beta);
-            dxdt.y() = x.v() * units::math::sin(x.yaw() + beta);
-            dxdt.yaw() = x.v() / lr * units::math::sin(beta) * angle_type{1};
-            dxdt.v() = u.a;
+            dxdt.x = x.v * units::math::cos(x.yaw + beta);
+            dxdt.y = x.v * units::math::sin(x.yaw + beta);
+            dxdt.yaw = x.v / lr * units::math::sin(beta) * angle_type{1};
+            dxdt.v = u.a;
         };
     }
 };
@@ -110,6 +152,27 @@ template <class Real, class Lf, class Lr>
 constexpr typename model<Real, Lf, Lr>::length_type model<Real, Lf, Lr>::lf;
 template <class Real, class Lf, class Lr>
 constexpr typename model<Real, Lf, Lr>::length_type model<Real, Lf, Lr>::lr;
+
+template <class State>
+auto operator+(const State& s1, const State& s2) -> State
+{
+    auto s3 = s1;
+    return s3 += s2;
+}
+
+template <class State>
+auto operator*(const typename State::real_type& a, const State& s) -> State
+{
+    auto s2 = s;
+    return s2 *= a;
+}
+
+template <class State>
+auto operator*(const typename State::duration_type& a, const State& s) ->
+    typename State::template rebind<State::deriv_order - 1>
+{
+    return {a * s.x, a * s.y, a * s.yaw, a * s.v};
+}
 
 template <class Model>
 auto operator<<(std::ostream& os, const Model&)

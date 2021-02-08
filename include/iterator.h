@@ -1,6 +1,8 @@
 #pragma once
 
+#include "boost/numeric/odeint.hpp"
 #include "type_traits.h"
+#include "units.h"
 
 #include <chrono>
 #include <functional>
@@ -26,10 +28,14 @@ auto adapt_rangepair(std::pair<Iterator, Iterator> rp)
 template <class Model, template <class...> class Stepper, class Duration>
 class owning_step_iterator {
     using real_type = typename Model::real_type;
-    using stepper_type =
-        Stepper<typename Model::state, real_type, typename Model::deriv, real_type>;
+    using iterator_step_type = Duration;
+
+    using stepper_type = Stepper<typename Model::state,
+                                 real_type,
+                                 typename Model::deriv,
+                                 units::unit_t<units::time::second, real_type>,
+                                 boost::numeric::odeint::vector_space_algebra>;
     using system_type = decltype(Model::state_transition(std::declval<typename Model::input>()));
-    using duration_type = Duration;
 
     static_assert(stdx::is_specialization_of<Duration, std::chrono::duration>::value, "");
 
@@ -37,16 +43,16 @@ class owning_step_iterator {
     using iterator = owning_step_iterator<Model, Stepper, Duration>;
 
     using difference_type = std::ptrdiff_t;
-    using value_type = std::pair<duration_type, typename Model::state>;
+    using value_type = std::pair<iterator_step_type, typename Model::state>;
     using pointer = std::add_pointer_t<value_type>;
-    using reference = std::pair<std::add_lvalue_reference_t<duration_type>,
+    using reference = std::pair<std::add_lvalue_reference_t<iterator_step_type>,
                                 std::add_lvalue_reference_t<typename Model::state>>;
     using iterator_category = std::input_iterator_tag;
 
     owning_step_iterator(const typename Model::state& x0,
                          const typename Model::input& u,
-                         duration_type span,
-                         duration_type step)
+                         iterator_step_type span,
+                         iterator_step_type step)
         : state_{x0}, system_{Model::state_transition(u)}, span_{span}, step_{step}
     {}
 
@@ -84,17 +90,7 @@ class owning_step_iterator {
   private:
     auto increment() -> void
     {
-        const auto as_real = [](auto duration) {
-            return std::chrono::duration_cast<std::chrono::duration<typename Model::real_type>>(
-                       duration)
-                .count();
-        };
-
-        const auto t = as_real(elapsed_);
-        const auto dt = as_real(step_);
-
-        stepper_type{}.do_step(system_, state_, t, dt);
-
+        stepper_type{}.do_step(system_, state_, elapsed_, step_);
         elapsed_ += step_;
     }
 
@@ -102,9 +98,9 @@ class owning_step_iterator {
 
     typename Model::state state_ = {};
     system_type system_ = {Model::state_transition({})};
-    duration_type span_ = {};
-    duration_type step_ = {};
-    duration_type elapsed_ = {};
+    iterator_step_type span_ = {};
+    iterator_step_type step_ = {};
+    iterator_step_type elapsed_ = {};
 };
 
 template <class Model, template <class...> class Stepper, class Duration>

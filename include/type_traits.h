@@ -84,6 +84,13 @@ struct rebind_outer_impl<From<Ts...>, From, To> {
 template <class T, template <class...> class From, template <class...> class To>
 using rebind_outer = typename detail::rebind_outer_impl<T, From, To>::type;
 
+/// @brief Calculate the absolute value of an integer type
+template <class Int>
+constexpr auto abs(Int n) noexcept -> std::enable_if_t<std::is_signed<Int>::value, Int>
+{
+    return (n < 0) ? -n : n;
+}
+
 }  // namespace tmp
 
 }  // namespace dyn
