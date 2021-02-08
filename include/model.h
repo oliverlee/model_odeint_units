@@ -33,21 +33,27 @@ struct model {
     /// Distance from center of mass to rear axle
     static constexpr length_type lr{Real{Lr::num} / Real{Lr::den}};
 
-    template <class... U>
-    struct state_with : std::array<Real, 4> {
+    template <unsigned int DerivOrder>
+    struct state_with_deriv_order : std::array<Real, 4> {
         using model_type = model<Real, Lf, Lr>;
+        static constexpr auto deriv_order = DerivOrder;
 
-        using x_type =
-            units::unit_t<units::compound_unit<typename length_type::unit_type, U...>, real_type>;
-        using y_type =
-            units::unit_t<units::compound_unit<typename length_type::unit_type, U...>, real_type>;
-        using yaw_type =
-            units::unit_t<units::compound_unit<typename angle_type::unit_type, U...>, real_type>;
-        using v_type =
-            units::unit_t<units::compound_unit<typename velocity_type::unit_type, U...>, real_type>;
+        template <class BaseUnit>
+        using unit_with_deriv_order = units::unit_t<
+            tmp::rebind_outer<
+                tmp::push_front<BaseUnit,
+                                tmp::repeat<DerivOrder, units::inverse<units::time::second>>>,
+                tmp::list,
+                units::compound_unit>,
+            real_type>;
 
-        constexpr state_with() = default;
-        constexpr state_with(x_type x, y_type y, yaw_type yaw, v_type v)
+        using x_type = unit_with_deriv_order<typename length_type::unit_type>;
+        using y_type = unit_with_deriv_order<typename length_type::unit_type>;
+        using yaw_type = unit_with_deriv_order<typename angle_type::unit_type>;
+        using v_type = unit_with_deriv_order<typename velocity_type::unit_type>;
+
+        constexpr state_with_deriv_order() = default;
+        constexpr state_with_deriv_order(x_type x, y_type y, yaw_type yaw, v_type v)
             : std::array<Real, 4>{x.value(), y.value(), yaw.value(), v.value()}
         {}
 
@@ -68,8 +74,8 @@ struct model {
         constexpr auto v() const noexcept { return v_type{this->at(3)}; }
     };
 
-    using state = state_with<>;
-    using deriv = state_with<units::inverse<units::time::second>>;
+    using state = state_with_deriv_order<0>;
+    using deriv = state_with_deriv_order<1>;
 
     struct input {
         using model_type = model<Real, Lf, Lr>;
