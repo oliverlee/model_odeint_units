@@ -1,8 +1,6 @@
 #pragma once
 
-#include "boost/numeric/odeint.hpp"
 #include "type_traits.h"
-#include "units.h"
 
 #include <chrono>
 #include <functional>
@@ -27,17 +25,13 @@ auto adapt_rangepair(std::pair<Iterator, Iterator> rp)
 
 template <class Model, template <class...> class Stepper, class Duration>
 class owning_step_iterator {
+    static_assert(stdx::is_specialization_of<Duration, std::chrono::duration>::value, "");
+
     using real_type = typename Model::real_type;
     using iterator_step_type = Duration;
 
-    using stepper_type = Stepper<typename Model::state,
-                                 real_type,
-                                 typename Model::deriv,
-                                 units::unit_t<units::time::second, real_type>,
-                                 boost::numeric::odeint::vector_space_algebra>;
     using system_type = decltype(Model::state_transition(std::declval<typename Model::input>()));
-
-    static_assert(stdx::is_specialization_of<Duration, std::chrono::duration>::value, "");
+    using stepper_type = typename Model::template specialize_stepper<Stepper>;
 
   public:
     using iterator = owning_step_iterator<Model, Stepper, Duration>;

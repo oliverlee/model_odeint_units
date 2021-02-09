@@ -1,5 +1,6 @@
 #pragma once
 
+#include "boost/numeric/odeint.hpp"
 #include "type_traits.h"
 #include "unit_proxy.h"
 #include "units.h"
@@ -128,6 +129,13 @@ struct model {
         /// Front steering angle [rad]
         angle_type deltaf;
     };
+
+    template <template <class...> class Stepper>
+    using specialize_stepper = Stepper<state,
+                                       real_type,
+                                       deriv,
+                                       duration_type,
+                                       boost::numeric::odeint::vector_space_algebra>;
 
     /// Vehicle course, relative to yaw
     static auto course(angle_type deltaf) -> angle_type
