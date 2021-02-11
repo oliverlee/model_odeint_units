@@ -91,6 +91,46 @@ constexpr auto abs(Int n) noexcept -> std::enable_if_t<std::is_signed<Int>::valu
     return (n < 0) ? -n : n;
 }
 
+/// @brief Drop the first n elements in a list
+namespace detail {
+
+template <int N, class L>
+struct drop_impl;
+
+template <int N, class T, class... Ts>
+struct drop_impl<N, list<T, Ts...>>
+    : std::conditional_t<(N <= 0), list<T, Ts...>, drop_impl<N - 1, list<Ts...>>> {};
+
+}  // namespace detail
+
+template <int N, class L>
+using drop = typename detail::drop_impl<N, L>::type;
+
+/// @brief Skip every n-th element in a list
+namespace detail {
+
+template <int N, int I, class R, class T>
+struct skip_impl;
+
+template <int N, int I, class... Rs, class T, class... Ts>
+struct skip_impl<N, I, list<Rs...>, list<T, Ts...>>
+    : std::conditional_t<(I == 0),
+                         skip_impl<N, N, list<Rs..., T>, list<Ts...>>,
+                         skip_impl<N, I - 1, list<Rs...>, list<Ts...>>> {
+    static_assert(N > 0, "");
+};
+
+template <int N, int I, class... Rs>
+struct skip_impl<N, I, list<Rs...>, list<>> : list<Rs...> {};
+
+template <class... Ts>
+struct skip_impl<0, 0, list<>, list<Ts...>> : list<Ts...> {};
+
+}  // namespace detail
+
+template <int N, class L>
+using skip = typename detail::skip_impl<N, 0, list<>, L>::type;
+
 }  // namespace tmp
 
 }  // namespace dyn

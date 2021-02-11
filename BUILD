@@ -22,3 +22,25 @@ cc_binary(
         "ENABLE_PREDEFINED_ANGULAR_VELOCITY_UNITS",
     ],
 )
+
+cc_binary(
+    name = "main2",
+    srcs = [
+        "include/state_space/vector.h",
+        "include/type_traits.h",
+        "main2.cc",
+    ],
+    includes = ["include"],
+    deps = [
+        "@units",
+    ],
+    defines = [
+        "DISABLE_PREDEFINED_UNITS",
+        "ENABLE_PREDEFINED_LENGTH_UNITS",
+        "ENABLE_PREDEFINED_TIME_UNITS",
+        "ENABLE_PREDEFINED_VELOCITY_UNITS",
+        "ENABLE_PREDEFINED_ACCELERATION_UNITS",
+        "ENABLE_PREDEFINED_ANGLE_UNITS",
+        "ENABLE_PREDEFINED_ANGULAR_VELOCITY_UNITS",
+    ],
+)
