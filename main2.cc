@@ -1,18 +1,23 @@
 #include "state_space/vector.h"
 #include "units.h"
 
+#include <iostream>
 #include <tuple>
 
 int main()
 {
+    using namespace units::literals;
 
     using state = dyn::state_space::
-        vector<struct x, units::length::meter_t, struct y, units::length::meter_t>;
+        vector<struct x, units::length::meter_t, struct v, units::velocity::meters_per_second_t>;
 
-    static_assert(
-        std::is_same<units::length::meter_t, std::tuple_element_t<0, state::data_type>>::value, "");
-    static_assert(
-        std::is_same<units::length::meter_t, std::tuple_element_t<1, state::data_type>>::value, "");
+    auto s = state{};
+
+    s.get<x>() = 1_m;
+    s.get<v>() = 2_mps;
+
+    std::cout << "x: " << s.get<x>() << std::endl;
+    std::cout << "v: " << s.get<v>() << std::endl;
 
     return 0;
 }

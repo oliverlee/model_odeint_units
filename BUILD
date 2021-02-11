@@ -27,6 +27,7 @@ cc_binary(
     name = "main2",
     srcs = [
         "include/state_space/vector.h",
+        "include/type_mapping.h",
         "include/type_traits.h",
         "main2.cc",
     ],
