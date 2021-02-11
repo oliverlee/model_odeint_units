@@ -100,7 +100,11 @@ template <class T, class L>
 using push_front = typename detail::push_front_impl<T, L>::type;
 
 /// @brief Replace the outer container type
+/// @note If the last template type is skipped, the outer `list` is rebound.
 namespace detail {
+
+template <class...>
+struct rebind_outer_tag;
 
 template <class T, template <class...> class From, template <class...> class To>
 struct rebind_outer_impl;
@@ -110,9 +114,17 @@ struct rebind_outer_impl<From<Ts...>, From, To> {
     using type = To<Ts...>;
 };
 
+template <class... Ts, template <class...> class To>
+struct rebind_outer_impl<list<Ts...>, To, rebind_outer_tag> {
+    using type = To<Ts...>;
+};
+
 }  // namespace detail
 
-template <class T, template <class...> class From, template <class...> class To>
+template <class T,
+          template <class...>
+          class From,
+          template <class...> class To = detail::rebind_outer_tag>
 using rebind_outer = typename detail::rebind_outer_impl<T, From, To>::type;
 
 /// @brief Calculate the absolute value of an integer type

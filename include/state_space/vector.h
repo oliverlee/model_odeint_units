@@ -16,7 +16,7 @@ struct vector {
     using values = tmp::skip<1, tmp::drop<1, tmp::list<Args...>>>;
 
     using key_index_mapping =
-        tmp::rebind_outer<tmp::map<std::add_pointer, keys>, tmp::list, tmp::mapping::index_map>;
+        tmp::rebind_outer<tmp::map<std::add_pointer, keys>, tmp::mapping::index_map>;
 
     template <class T>
     using enable_if_key = std::enable_if_t<key_index_mapping::template contains_key<T*>::value>;
@@ -25,14 +25,13 @@ struct vector {
     static_assert((sizeof...(Args) % 2) == 0,
                   "A vector requires an even number of template types.");
     static_assert(
-        !tmp::rebind_outer<tmp::map<std::is_pointer, keys>, tmp::list, tmp::disjunction>::value,
+        !tmp::rebind_outer<tmp::map<std::is_pointer, keys>, tmp::disjunction>::value,
         "Vector key types cannot be pointers.");
     static_assert(tmp::rebind_outer<tmp::map<units::traits::is_unit_t, values>,
-                                    tmp::list,
                                     tmp::conjunction>::value,
                   "Vector value types must be a unit container.");
 
-    using data_type = tmp::rebind_outer<values, tmp::list, std::tuple>;
+    using data_type = tmp::rebind_outer<values, std::tuple>;
 
     template <class T, class = enable_if_key<T>>
     decltype(auto) get()
