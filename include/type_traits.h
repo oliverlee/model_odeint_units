@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <utility>
 
 namespace dyn {
 namespace tmp {
@@ -216,6 +217,42 @@ struct make_unique_impl<list<Rs...>, list<>> : list<Rs...> {};
 template <class L>
 using make_unique = typename detail::make_unique_impl<list<>, L>::type;
 
+/// @brief Zip together two lists
+namespace detail {
+
+template <class R, class L1, class L2>
+struct make_zip_impl;
+
+template <class... Rs, class T1, class... T1s, class T2, class... T2s>
+struct make_zip_impl<list<Rs...>, list<T1, T1s...>, list<T2, T2s...>>
+    : make_zip_impl<list<Rs..., std::pair<T1, T2>>, list<T1s...>, list<T2s...>> {};
+
+template <class... Rs>
+struct make_zip_impl<list<Rs...>, list<>, list<>> : list<Rs...> {};
+
+}  // namespace detail
+
+template <class L1, class L2>
+using zip = typename detail::make_zip_impl<list<>, L1, L2>::type;
+
+/// @brief Interleave together two lists
+namespace detail {
+
+template <class R, class L1, class L2>
+struct make_interleave_impl;
+
+
+template <class... Rs, class T1, class... T1s, class T2, class... T2s>
+struct make_interleave_impl<list<Rs...>, list<T1, T1s...>, list<T2, T2s...>>
+    : make_interleave_impl<list<Rs..., T1, T2>, list<T1s...>, list<T2s...>> {};
+
+template <class... Rs>
+struct make_interleave_impl<list<Rs...>, list<>, list<>> : list<Rs...> {};
+
+}  // namespace detail
+
+template <class L1, class L2>
+using interleave = typename detail::make_interleave_impl<list<>, L1, L2>::type;
 
 }  // namespace tmp
 }  // namespace dyn
