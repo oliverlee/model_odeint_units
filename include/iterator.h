@@ -25,7 +25,7 @@ auto adapt_rangepair(std::pair<Iterator, Iterator> rp)
 
 template <class Model, template <class...> class Stepper, class Duration>
 class owning_step_iterator {
-    static_assert(stdx::is_specialization_of<Duration, std::chrono::duration>::value, "");
+    static_assert(tmp::is_specialization_of<Duration, std::chrono::duration>::value, "");
 
     using real_type = typename Model::real_type;
     using iterator_step_type = Duration;
@@ -100,7 +100,7 @@ class owning_step_iterator {
 template <class Model, template <class...> class Stepper, class Duration>
 auto make_owning_step_range(const typename Model::state& x0,
                             const typename Model::input& u,
-                            stdx::type_identity_t<Duration> span,
+                            tmp::type_identity_t<Duration> span,
                             Duration step)
 {
     return adapt_rangepair(

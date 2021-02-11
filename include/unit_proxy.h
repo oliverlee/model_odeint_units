@@ -22,7 +22,7 @@ class unit_proxy {
 
 template <class UnitProxy>
 auto operator<<(std::ostream& os, const UnitProxy& p)
-    -> std::enable_if_t<stdx::is_specialization_of<UnitProxy, unit_proxy>::value, std::ostream&>
+    -> std::enable_if_t<tmp::is_specialization_of<UnitProxy, unit_proxy>::value, std::ostream&>
 {
     return os << typename UnitProxy::unit_type(p);
 }

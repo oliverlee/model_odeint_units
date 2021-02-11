@@ -184,14 +184,14 @@ auto operator*(const typename State::duration_type& a, const State& s) ->
 
 template <class Model>
 auto operator<<(std::ostream& os, const Model&)
-    -> std::enable_if_t<stdx::is_specialization_of<Model, model>::value, std::ostream&>
+    -> std::enable_if_t<tmp::is_specialization_of<Model, model>::value, std::ostream&>
 {
     return os << "model (" << Model::lf << ", " << Model::lr << ")";
 }
 
 template <class State>
 auto operator<<(std::ostream& os, const State& s)
-    -> std::enable_if_t<stdx::is_specialization_of<typename State::model_type, model>::value,
+    -> std::enable_if_t<tmp::is_specialization_of<typename State::model_type, model>::value,
                         std::ostream&>
 {
     return os << "{" << s.x << ", " << s.y << ", " << s.yaw << ", " << s.v << "}";

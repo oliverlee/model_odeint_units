@@ -3,7 +3,7 @@
 #include <type_traits>
 
 namespace dyn {
-namespace stdx {
+namespace tmp {
 
 /// @brief Checks if a type is a template specialization
 /// @see http://open-std.org/JTC1/SC22/WG21/docs/papers/2020/p2098r1.pdf
@@ -23,9 +23,6 @@ struct type_identity {
 template <class T>
 using type_identity_t = typename type_identity<T>::type;
 
-}  // namespace stdx
-
-namespace tmp {
 
 /// @brief A metatype that contains a parameter pack
 template <class...>
