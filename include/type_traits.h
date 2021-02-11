@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <type_traits>
 
 namespace dyn {
@@ -12,6 +13,10 @@ struct is_specialization_of : std::false_type {};
 
 template <template <class...> class Primary, class... Args>
 struct is_specialization_of<Primary<Args...>, Primary> : std::true_type {};
+
+/// @brief A type alias for an integral constant where T is `std::size_t`
+template <std::size_t I>
+using index_constant = std::integral_constant<std::size_t, I>;
 
 /// @brief Provides the member typedef type that names T (i.e., the identity transformation).
 /// @see https://en.cppreference.com/w/cpp/types/type_identity
@@ -29,6 +34,35 @@ template <class...>
 struct list {
     using type = list;
 };
+
+/// @brief A metatype that inherits from all types in a parameter pack
+template <class... Ts>
+struct inheritor : Ts... {
+    using type = inheritor;
+};
+
+/// @brief Variadic logical AND metafunction
+/// @see https://en.cppreference.com/w/cpp/experimental/conjunction#Possible_implementation
+template <class...>
+struct conjunction : std::true_type {};
+template <class B1>
+struct conjunction<B1> : B1 {};
+template <class B1, class... Bn>
+struct conjunction<B1, Bn...> : std::conditional_t<bool(B1::value), conjunction<Bn...>, B1> {};
+
+/// @brief Variadic logical OR metafunction
+/// @see https://en.cppreference.com/w/cpp/experimental/disjunction#Possible_implementation
+template <class...>
+struct disjunction : std::false_type {};
+template <class B1>
+struct disjunction<B1> : B1 {};
+template <class B1, class... Bn>
+struct disjunction<B1, Bn...> : std::conditional_t<bool(B1::value), B1, disjunction<Bn...>> {};
+
+/// @brief Logical NOT metafunction
+/// @see https://en.cppreference.com/w/cpp/types/negation#Possible_implementation
+template <class B>
+struct negation : std::integral_constant<bool, !bool(B::value)> {};
 
 /// @brief Stores `Count` number of repetitions of type `T` in a `list`
 namespace detail {
@@ -128,6 +162,48 @@ struct skip_impl<0, 0, list<>, list<Ts...>> : list<Ts...> {};
 template <int N, class L>
 using skip = typename detail::skip_impl<N, 0, list<>, L>::type;
 
-}  // namespace tmp
+/// @brief Map a metafunction `Func` to a list of types
+namespace detail {
 
+template <template <class> class Func, class R, class T>
+struct map_impl;
+
+template <template <class> class Func, class... Rs, class T, class... Ts>
+struct map_impl<Func, list<Rs...>, list<T, Ts...>>
+    : map_impl<Func, list<Rs..., typename Func<T>::type>, list<Ts...>> {};
+
+template <template <class> class Func, class... Rs>
+struct map_impl<Func, list<Rs...>, list<>> : list<Rs...> {};
+
+}  // namespace detail
+
+template <template <class> class Func, class L>
+using map = typename detail::map_impl<Func, list<>, L>::type;
+
+/// @brief Check if type K is contained within a list of types
+template <class K, class L>
+using contains = std::is_base_of<K, rebind_outer<L, list, inheritor>>;
+
+/// @brief Return a list of unique types
+namespace detail {
+
+template <class R, class T>
+struct make_unique_impl;
+
+template <class... Rs, class T, class... Ts>
+struct make_unique_impl<list<Rs...>, list<T, Ts...>>
+    : std::conditional_t<contains<T, list<Rs...>>::value,
+                         make_unique_impl<list<Rs...>, list<Ts...>>,
+                         make_unique_impl<list<Rs..., T>, list<Ts...>>> {};
+
+template <class... Rs>
+struct make_unique_impl<list<Rs...>, list<>> : list<Rs...> {};
+
+}  // namespace detail
+
+template <class L>
+using make_unique = typename detail::make_unique_impl<list<>, L>::type;
+
+
+}  // namespace tmp
 }  // namespace dyn
