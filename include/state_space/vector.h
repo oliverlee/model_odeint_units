@@ -77,18 +77,25 @@ struct vector {
                      tmp::zip<values, tmp::repeat<size, std::integral_constant<int, N>>>>>,
         vector>;
 
+    constexpr vector() = default;
+
+    template <class... Utypes,
+              class = std::enable_if_t<std::is_same<data_type, std::tuple<Utypes...>>::value>>
+    constexpr vector(Utypes&&... args) : data_{std::forward<Utypes>(args)...}
+    {}
+
     template <class T, class = enable_if_key<T>>
-    decltype(auto) get()
+    constexpr decltype(auto) get()
     {
         using Index = typename key_index_mapping::template at_key<T*>;
-        return std::get<Index::value>(data);
+        return std::get<Index::value>(data_);
     }
 
     template <class T, class = enable_if_key<T>>
-    decltype(auto) get() const
+    constexpr decltype(auto) get() const
     {
         using Index = typename key_index_mapping::template at_key<T*>;
-        return std::get<Index::value>(data);
+        return std::get<Index::value>(data_);
     }
 
     auto operator+=(const vector& other) -> vector&
@@ -107,8 +114,6 @@ struct vector {
         return *this;
     }
 
-    data_type data;
-
   private:
     template <class Visitor>
     auto for_each(Visitor v) -> void
@@ -119,16 +124,18 @@ struct vector {
     template <class Visitor, std::size_t... Is>
     auto for_each_impl(Visitor v, std::index_sequence<Is...>) -> void
     {
-        const auto unused = {(v(std::get<Is>(data)), 0)...};
+        const auto unused = {(v(std::get<Is>(data_)), 0)...};
         (void)unused;
     }
 
     template <std::size_t... Is>
     auto add_to_impl(const vector& other, std::index_sequence<Is...>) -> void
     {
-        const auto unused = {(std::get<Is>(data) += std::get<Is>(other.data), 0)...};
+        const auto unused = {(std::get<Is>(data_) += std::get<Is>(other.data_), 0)...};
         (void)unused;
     }
+
+    data_type data_;
 };
 
 }  // namespace state_space
