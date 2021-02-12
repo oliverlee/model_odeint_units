@@ -11,10 +11,12 @@ git_repository(
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 boost_deps()
 
-new_local_repository(
-    name = "extern",
-    path = "extern",
-    build_file = "extern/BUILD",
+http_archive(
+    name = "gcem",
+    url = "https://github.com/kthohr/gcem/archive/v1.13.1.tar.gz",
+    sha256 = "69a1973f146a4a5e584193af062359f50bd5b948c4175d58ea2622e1c066b99b",
+    strip_prefix = "gcem-1.13.1",
+    build_file = "@//:gcem.BUILD"
 )
 
 http_archive(

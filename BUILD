@@ -33,6 +33,7 @@ cc_binary(
     ],
     includes = ["include"],
     deps = [
+        "@gcem",
         "@units",
     ],
     defines = [
