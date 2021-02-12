@@ -21,12 +21,8 @@ int main()
 
 
     {
-        auto d = state::derivative<1>{};
-
-        d.get<x>() = 1_mps;
-        d.get<v>() = 2_mps_sq;
-
-        d += state::derivative<1>{4_mps, 3_mps_sq};
+        constexpr auto d =
+            state::derivative<1>{1_mps, 2_mps_sq} + state::derivative<1>{4_mps, 3_mps_sq};
 
         std::cout << "derivative: " << std::endl;
         std::cout << "x: " << d.get<x>() << std::endl;

@@ -116,7 +116,7 @@ struct vector {
         return std::get<Index::value>(data_);
     }
 
-    auto operator+=(const vector& other) -> vector&
+    constexpr auto operator+=(const vector& other) -> vector&
     {
         add_to_impl(other, std::make_index_sequence<size>{});
 
@@ -155,6 +155,13 @@ struct vector {
 
     data_type data_;
 };
+
+template <class Vector>
+constexpr auto operator+(const Vector& x, const Vector& y) -> Vector
+{
+    auto z = x;
+    return z += y;
+}
 
 template <class Vector, class Real>
 constexpr auto operator*(const Vector& x, const Real& a)
