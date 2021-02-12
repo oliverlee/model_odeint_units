@@ -27,6 +27,8 @@ cc_binary(
     name = "main2",
     srcs = [
         "include/gcem_units.h",
+        "include/iterator.h",
+        "include/state_space/system.h",
         "include/state_space/vector.h",
         "include/type_mapping.h",
         "include/type_traits.h",
@@ -34,6 +36,7 @@ cc_binary(
     ],
     includes = ["include"],
     deps = [
+        "@boost//:numeric_odeint",
         "@gcem",
         "@units",
     ],

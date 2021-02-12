@@ -184,12 +184,20 @@ constexpr auto operator+(const Vector& x, const Vector& y) -> Vector
     return z += y;
 }
 
-template <class Vector, class Real>
-constexpr auto operator*(const Vector& x, Real a)
+template <class Real, class Vector>
+constexpr auto operator*(Real a, const Vector& x)
     -> std::enable_if_t<std::is_convertible<Real, typename Vector::real_type>::value, Vector>
 {
     auto y = x;
     return y *= typename Vector::real_type{a};
+}
+
+template <class Duration, class Vector>
+constexpr auto operator*(Duration t, const Vector& x)
+    -> std::enable_if_t<std::is_convertible<Duration, typename Vector::duration_type>::value,
+                        typename Vector::template derivative<-1>>
+{
+    return x * typename Vector::duration_type{t};
 }
 
 }  // namespace state_space
