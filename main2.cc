@@ -1,6 +1,7 @@
 #include "state_space/vector.h"
 #include "units.h"
 
+#include <chrono>
 #include <iostream>
 #include <tuple>
 
@@ -27,6 +28,11 @@ int main()
         std::cout << "derivative: " << std::endl;
         std::cout << "x: " << d.get<x>() << std::endl;
         std::cout << "v: " << d.get<v>() << std::endl;
+
+        constexpr auto i = d * std::chrono::seconds{1};
+        std::cout << "integral of derivative: " << std::endl;
+        std::cout << "x: " << i.get<x>() << std::endl;
+        std::cout << "v: " << i.get<v>() << std::endl;
     }
 
     return 0;

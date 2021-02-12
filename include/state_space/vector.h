@@ -28,7 +28,7 @@ struct elementwise_scalar_multiply {
 }  // namespace detail
 
 template <class... Args>
-struct vector {
+class vector {
   private:
     using keys = tmp::skip<1, tmp::list<Args...>>;
     using values = tmp::skip<1, tmp::drop<1, tmp::list<Args...>>>;
@@ -84,6 +84,7 @@ struct vector {
 
     using data_type = tmp::rebind_outer<values, std::tuple>;
     using real_type = first_underlying_type;
+    using duration_type = units::unit_t<units::time::second, real_type>;
 
     static constexpr std::size_t size = sizeof...(Args) / 2;
 
@@ -123,13 +124,18 @@ struct vector {
         return *this;
     }
 
-    constexpr auto operator*=(const real_type& a) -> vector&
+    constexpr auto operator*=(real_type a) -> vector&
     {
         const auto k = units::unit_t<units::dimensionless::scalar, real_type>{a};
 
         for_each(detail::elementwise_scalar_multiply<decltype(k)>{k});
 
         return *this;
+    }
+
+    constexpr auto operator*(duration_type dt) const -> derivative<-1>
+    {
+        return multiply_by_time_impl(dt, std::make_index_sequence<size>{});
     }
 
   private:
@@ -153,7 +159,22 @@ struct vector {
         (void)unused;
     }
 
+    template <std::size_t... Is>
+    constexpr auto multiply_by_time_impl(duration_type dt, std::index_sequence<Is...>) const
+        -> derivative<-1>
+    {
+        auto integral = derivative<-1>{};
+
+        const auto unused = {(std::get<Is>(integral.data_) += std::get<Is>(data_) * dt, 0)...};
+        (void)unused;
+
+        return integral;
+    }
+
     data_type data_;
+
+    template <class...>
+    friend class vector;
 };
 
 template <class Vector>
@@ -164,7 +185,7 @@ constexpr auto operator+(const Vector& x, const Vector& y) -> Vector
 }
 
 template <class Vector, class Real>
-constexpr auto operator*(const Vector& x, const Real& a)
+constexpr auto operator*(const Vector& x, Real a)
     -> std::enable_if_t<std::is_convertible<Real, typename Vector::real_type>::value, Vector>
 {
     auto y = x;
