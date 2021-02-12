@@ -4,6 +4,7 @@
 #include "type_traits.h"
 #include "units.h"
 
+#include <iosfwd>
 #include <tuple>
 
 namespace dyn {
@@ -138,17 +139,23 @@ class vector {
         return multiply_by_time_impl(dt, std::make_index_sequence<size>{});
     }
 
-  private:
     template <class Visitor>
     constexpr auto for_each(Visitor v) -> void
     {
-        for_each_impl(v, std::make_index_sequence<size>{});
+        for_each_impl(*this, v, std::make_index_sequence<size>{});
     }
 
-    template <class Visitor, std::size_t... Is>
-    constexpr auto for_each_impl(Visitor v, std::index_sequence<Is...>) -> void
+    template <class Visitor>
+    constexpr auto for_each(Visitor v) const -> void
     {
-        const auto unused = {(v(std::get<Is>(data_)), 0)...};
+        for_each_impl(*this, v, std::make_index_sequence<size>{});
+    }
+
+  private:
+    template <class Self, class Visitor, std::size_t... Is>
+    static constexpr auto for_each_impl(Self self, Visitor v, std::index_sequence<Is...>) -> void
+    {
+        const auto unused = {(v(std::get<Is>(self.data_)), 0)...};
         (void)unused;
     }
 
@@ -198,6 +205,26 @@ constexpr auto operator*(Duration t, const Vector& x)
                         typename Vector::template derivative<-1>>
 {
     return x * typename Vector::duration_type{t};
+}
+
+template <class Vector>
+auto operator<<(std::ostream& os, const Vector& v)
+    -> std::enable_if_t<tmp::is_specialization_of<Vector, vector>::value, std::ostream&>
+{
+    bool first = true;
+
+    os << "{ ";
+    v.for_each([&os, &first](const auto& elem) {
+        if (first) {
+            first = false;
+        } else {
+            os << ", ";
+        }
+
+        os << elem;
+    });
+
+    return os << "}";
 }
 
 }  // namespace state_space

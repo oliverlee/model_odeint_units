@@ -59,8 +59,7 @@ int main()
     for (auto result :
          dyn::make_owning_step_range<KinematicBicycle, boost::numeric::odeint::runge_kutta4>(
              {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 3s, 100ms)) {
-        // std::cout << units::time::second_t{result.first} << ": " << result.second << std::endl;
-        std::cout << units::time::second_t{result.first} << std::endl;
+        std::cout << units::time::second_t{result.first} << ": " << result.second << std::endl;
     }
 
     return 0;
