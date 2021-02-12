@@ -67,13 +67,14 @@ struct vector {
     using data_type = tmp::rebind_outer<values, std::tuple>;
     using real_type = first_underlying_type;
 
+    static constexpr std::size_t size = sizeof...(Args) / 2;
+
     template <int N>
     using derivative = tmp::rebind_outer<
         tmp::interleave<
             keys,
             tmp::map<unit_deriv,
-                     tmp::zip<values,
-                              tmp::repeat<sizeof...(Args) / 2, std::integral_constant<int, N>>>>>,
+                     tmp::zip<values, tmp::repeat<size, std::integral_constant<int, N>>>>>,
         vector>;
 
     template <class T, class = enable_if_key<T>>
@@ -90,7 +91,44 @@ struct vector {
         return std::get<Index::value>(data);
     }
 
+    auto operator+=(const vector& other) -> vector&
+    {
+        add_to_impl(other, std::make_index_sequence<size>{});
+
+        return *this;
+    }
+
+    auto operator*=(const real_type& a) -> vector&
+    {
+        const auto k = units::unit_t<units::dimensionless::scalar, real_type>{a};
+
+        for_each([k](auto& elem) { elem *= k; });
+
+        return *this;
+    }
+
     data_type data;
+
+  private:
+    template <class Visitor>
+    auto for_each(Visitor v) -> void
+    {
+        for_each_impl(v, std::make_index_sequence<size>{});
+    }
+
+    template <class Visitor, std::size_t... Is>
+    auto for_each_impl(Visitor v, std::index_sequence<Is...>) -> void
+    {
+        const auto unused = {(v(std::get<Is>(data)), 0)...};
+        (void)unused;
+    }
+
+    template <std::size_t... Is>
+    auto add_to_impl(const vector& other, std::index_sequence<Is...>) -> void
+    {
+        const auto unused = {(std::get<Is>(data) += std::get<Is>(other.data), 0)...};
+        (void)unused;
+    }
 };
 
 }  // namespace state_space

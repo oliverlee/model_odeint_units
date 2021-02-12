@@ -17,6 +17,8 @@ int main()
         s.get<x>() = 1_m;
         s.get<v>() = 2_mps;
 
+        s *= 2;
+
         std::cout << "state: " << std::endl;
         std::cout << "x: " << s.get<x>() << std::endl;
         std::cout << "v: " << s.get<v>() << std::endl;
@@ -28,6 +30,8 @@ int main()
 
         d.get<x>() = 1_mps;
         d.get<v>() = 2_mps_sq;
+
+        d += state::derivative<1>{{4_mps, 3_mps_sq}};
 
         std::cout << "derivative: " << std::endl;
         std::cout << "x: " << d.get<x>() << std::endl;
