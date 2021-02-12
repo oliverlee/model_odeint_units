@@ -221,38 +221,54 @@ using make_unique = typename detail::make_unique_impl<list<>, L>::type;
 namespace detail {
 
 template <class R, class L1, class L2>
-struct make_zip_impl;
+struct zip_impl;
 
 template <class... Rs, class T1, class... T1s, class T2, class... T2s>
-struct make_zip_impl<list<Rs...>, list<T1, T1s...>, list<T2, T2s...>>
-    : make_zip_impl<list<Rs..., std::pair<T1, T2>>, list<T1s...>, list<T2s...>> {};
+struct zip_impl<list<Rs...>, list<T1, T1s...>, list<T2, T2s...>>
+    : zip_impl<list<Rs..., std::pair<T1, T2>>, list<T1s...>, list<T2s...>> {};
 
 template <class... Rs>
-struct make_zip_impl<list<Rs...>, list<>, list<>> : list<Rs...> {};
+struct zip_impl<list<Rs...>, list<>, list<>> : list<Rs...> {};
 
 }  // namespace detail
 
 template <class L1, class L2>
-using zip = typename detail::make_zip_impl<list<>, L1, L2>::type;
+using zip = typename detail::zip_impl<list<>, L1, L2>::type;
 
 /// @brief Interleave together two lists
 namespace detail {
 
 template <class R, class L1, class L2>
-struct make_interleave_impl;
+struct interleave_impl;
 
 
 template <class... Rs, class T1, class... T1s, class T2, class... T2s>
-struct make_interleave_impl<list<Rs...>, list<T1, T1s...>, list<T2, T2s...>>
-    : make_interleave_impl<list<Rs..., T1, T2>, list<T1s...>, list<T2s...>> {};
+struct interleave_impl<list<Rs...>, list<T1, T1s...>, list<T2, T2s...>>
+    : interleave_impl<list<Rs..., T1, T2>, list<T1s...>, list<T2s...>> {};
 
 template <class... Rs>
-struct make_interleave_impl<list<Rs...>, list<>, list<>> : list<Rs...> {};
+struct interleave_impl<list<Rs...>, list<>, list<>> : list<Rs...> {};
 
 }  // namespace detail
 
 template <class L1, class L2>
-using interleave = typename detail::make_interleave_impl<list<>, L1, L2>::type;
+using interleave = typename detail::interleave_impl<list<>, L1, L2>::type;
+
+/// @brief Obtain the front item in a list
+namespace detail {
+
+template <class L>
+struct front_impl;
+
+template <class T, class... Ts>
+struct front_impl<list<T, Ts...>> {
+    using type = T;
+};
+
+}  // namespace detail
+
+template <class L>
+using front = typename detail::front_impl<L>::type;
 
 }  // namespace tmp
 }  // namespace dyn

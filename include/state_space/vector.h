@@ -42,16 +42,30 @@ struct vector {
                                               UnitDerivArgPair::second_type::value>::type;
     };
 
+    using first_underlying_type =
+        typename units::traits::unit_t_traits<tmp::front<values>>::underlying_type;
+
+    template <class T>
+    struct has_same_underlying_type {
+        using type = std::is_same<first_underlying_type,
+                                  typename units::traits::unit_t_traits<T>::underlying_type>;
+    };
+
   public:
     static_assert((sizeof...(Args) % 2) == 0,
                   "A vector requires an even number of template types.");
+    static_assert((sizeof...(Args) > 0), "A vector requires more than zero template types.");
     static_assert(!tmp::rebind_outer<tmp::map<std::is_pointer, keys>, tmp::disjunction>::value,
                   "Vector key types cannot be pointers.");
     static_assert(
         tmp::rebind_outer<tmp::map<units::traits::is_unit_t, values>, tmp::conjunction>::value,
         "Vector value types must be a unit container.");
+    static_assert(
+        tmp::rebind_outer<tmp::map<has_same_underlying_type, values>, tmp::conjunction>::value,
+        "Vector value types must use the same underlying type.");
 
     using data_type = tmp::rebind_outer<values, std::tuple>;
+    using real_type = first_underlying_type;
 
     template <int N>
     using derivative = tmp::rebind_outer<
