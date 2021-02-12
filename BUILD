@@ -26,6 +26,7 @@ cc_binary(
 cc_binary(
     name = "main2",
     srcs = [
+        "include/gcem_units.h",
         "include/state_space/vector.h",
         "include/type_mapping.h",
         "include/type_traits.h",
