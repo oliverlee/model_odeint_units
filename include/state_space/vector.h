@@ -9,6 +9,24 @@
 namespace dyn {
 namespace state_space {
 
+namespace detail {
+
+template <class Scalar>
+struct elementwise_scalar_multiply {
+    static_assert(units::traits::is_dimensionless_unit<Scalar>::value,
+                  "`Scalar` must be a dimensionless unit.");
+
+    template <class T>
+    constexpr auto operator()(T& elem)
+    {
+        elem *= scalar;
+    }
+
+    const Scalar scalar;
+};
+
+}  // namespace detail
+
 template <class... Args>
 struct vector {
   private:
@@ -105,31 +123,31 @@ struct vector {
         return *this;
     }
 
-    auto operator*=(const real_type& a) -> vector&
+    constexpr auto operator*=(const real_type& a) -> vector&
     {
         const auto k = units::unit_t<units::dimensionless::scalar, real_type>{a};
 
-        for_each([k](auto& elem) { elem *= k; });
+        for_each(detail::elementwise_scalar_multiply<decltype(k)>{k});
 
         return *this;
     }
 
   private:
     template <class Visitor>
-    auto for_each(Visitor v) -> void
+    constexpr auto for_each(Visitor v) -> void
     {
         for_each_impl(v, std::make_index_sequence<size>{});
     }
 
     template <class Visitor, std::size_t... Is>
-    auto for_each_impl(Visitor v, std::index_sequence<Is...>) -> void
+    constexpr auto for_each_impl(Visitor v, std::index_sequence<Is...>) -> void
     {
         const auto unused = {(v(std::get<Is>(data_)), 0)...};
         (void)unused;
     }
 
     template <std::size_t... Is>
-    auto add_to_impl(const vector& other, std::index_sequence<Is...>) -> void
+    constexpr auto add_to_impl(const vector& other, std::index_sequence<Is...>) -> void
     {
         const auto unused = {(std::get<Is>(data_) += std::get<Is>(other.data_), 0)...};
         (void)unused;
@@ -137,6 +155,14 @@ struct vector {
 
     data_type data_;
 };
+
+template <class Vector, class Real>
+constexpr auto operator*(const Vector& x, const Real& a)
+    -> std::enable_if_t<std::is_convertible<Real, typename Vector::real_type>::value, Vector>
+{
+    auto y = x;
+    return y *= typename Vector::real_type{a};
+}
 
 }  // namespace state_space
 }  // namespace dyn

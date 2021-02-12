@@ -12,12 +12,7 @@ int main()
         vector<struct x, units::length::meter_t, struct v, units::velocity::meters_per_second_t>;
 
     {
-        auto s = state{};
-
-        s.get<x>() = 1_m;
-        s.get<v>() = 2_mps;
-
-        s *= 2;
+        constexpr auto s = state{1_m, 2_mps} * 2;
 
         std::cout << "state: " << std::endl;
         std::cout << "x: " << s.get<x>() << std::endl;
