@@ -142,20 +142,20 @@ class vector {
     template <class Visitor>
     constexpr auto for_each(Visitor v) -> void
     {
-        for_each_impl(*this, v, std::make_index_sequence<size>{});
+        for_each_impl(this, v, std::make_index_sequence<size>{});
     }
 
     template <class Visitor>
     constexpr auto for_each(Visitor v) const -> void
     {
-        for_each_impl(*this, v, std::make_index_sequence<size>{});
+        for_each_impl(this, v, std::make_index_sequence<size>{});
     }
 
   private:
     template <class Self, class Visitor, std::size_t... Is>
     static constexpr auto for_each_impl(Self self, Visitor v, std::index_sequence<Is...>) -> void
     {
-        const auto unused = {(v(std::get<Is>(self.data_)), 0)...};
+        const auto unused = {(v(std::get<Is>(self->data_)), 0)...};
         (void)unused;
     }
 
