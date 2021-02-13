@@ -30,7 +30,8 @@ class owning_step_iterator {
     using real_type = typename Model::real_type;
     using iterator_step_type = Duration;
 
-    using system_type = decltype(Model::state_transition(std::declval<typename Model::input>()));
+    using system_type =
+        decltype(std::declval<Model>().state_transition(std::declval<typename Model::input>()));
     using stepper_type = typename Model::template specialize_stepper<Stepper>;
 
   public:
@@ -43,14 +44,14 @@ class owning_step_iterator {
                                 std::add_lvalue_reference_t<typename Model::state>>;
     using iterator_category = std::input_iterator_tag;
 
-    owning_step_iterator(const typename Model::state& x0,
-                         const typename Model::input& u,
+    owning_step_iterator(system_type sys,
+                         const typename Model::state& x0,
                          iterator_step_type span,
                          iterator_step_type step)
-        : state_{x0}, system_{Model::state_transition(u)}, span_{span}, step_{step}
+        : system_{sys}, state_{x0}, span_{span}, step_{step}
     {}
 
-    owning_step_iterator() = default;
+    owning_step_iterator(system_type sys) : system_{sys} {}
 
     auto operator++() noexcept -> iterator&
     {
@@ -90,22 +91,38 @@ class owning_step_iterator {
 
     auto at_end() const noexcept -> bool { return elapsed_ >= span_; }
 
+    system_type system_;
     typename Model::state state_ = {};
-    system_type system_ = {Model::state_transition({})};
     iterator_step_type span_ = {};
     iterator_step_type step_ = {};
     iterator_step_type elapsed_ = {};
 };
 
-template <class Model, template <class...> class Stepper, class Duration>
+template <class Model,
+          template <class...>
+          class Stepper,
+          class Duration,
+          class = std::enable_if_t<std::is_default_constructible<Model>::value>>
 auto make_owning_step_range(const typename Model::state& x0,
                             const typename Model::input& u,
                             tmp::type_identity_t<Duration> span,
                             Duration step)
 {
+    return make_owning_step_range<Stepper>(Model{}, x0, u, span, step);
+}
+
+template <template <class...> class Stepper, class Model, class Duration>
+auto make_owning_step_range(const Model& model,
+                            const typename Model::state& x0,
+                            const typename Model::input& u,
+                            tmp::type_identity_t<Duration> span,
+                            Duration step)
+{
+    const auto sys = model.state_transition(u);
+
     return adapt_rangepair(
-        std::make_pair(owning_step_iterator<Model, Stepper, Duration>(x0, u, span, step),
-                       owning_step_iterator<Model, Stepper, Duration>()));
+        std::make_pair(owning_step_iterator<Model, Stepper, Duration>(sys, x0, span, step),
+                       owning_step_iterator<Model, Stepper, Duration>(sys)));
 }
 
 }  // namespace dyn

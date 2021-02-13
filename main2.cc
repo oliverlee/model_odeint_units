@@ -13,9 +13,6 @@ namespace {
 using namespace units::literals;
 using namespace std::literals::chrono_literals;
 
-constexpr auto lf = 1.105_m;
-constexpr auto lr = 1.738_m;
-
 using state = dyn::state_space::vector<struct x,
                                        units::length::meter_t,
                                        struct y,
@@ -25,39 +22,35 @@ using state = dyn::state_space::vector<struct x,
                                        struct v,
                                        units::velocity::meters_per_second_t>;
 
-using deriv = state::derivative<1>;
-
 using input = dyn::state_space::vector<struct a,
                                        units::acceleration::meters_per_second_squared_t,
                                        struct deltaf,
                                        units::angle::radian_t>;
 
-struct f {
-    constexpr auto operator()(const state& sx, deriv& dxdt, typename state::duration_type) -> void
-    {
-        const auto beta = dyn::math::atan(lr / (lf + lr) * dyn::math::tan(u.get<deltaf>()));
+const auto kinematic_bicycle = dyn::state_space::make_system<state, input>([](const auto& u) {
+    return [u](const auto& sx, auto& dxdt, auto) {
+        constexpr auto lf = 1.105_m;
+        constexpr auto lr = 1.738_m;
 
-        dxdt.get<x>() = sx.get<v>() * dyn::math::cos(sx.get<yaw>() + beta);
-        dxdt.get<y>() = sx.get<v>() * dyn::math::sin(sx.get<yaw>() + beta);
-        dxdt.get<yaw>() = sx.get<v>() / lr * dyn::math::sin(beta) * 1_rad;
-        dxdt.get<v>() = u.get<a>();
-    }
+        const auto beta =
+            dyn::math::atan(lr / (lf + lr) * dyn::math::tan(u.template get<deltaf>()));
 
-    input u;
-};
-
-struct state_transition {
-    constexpr auto operator()(const input& u) -> f { return {u}; }
-};
-
-using KinematicBicycle = dyn::state_space::system<state, input, state_transition>;
+        dxdt.template get<x>() =
+            sx.template get<v>() * dyn::math::cos(sx.template get<yaw>() + beta);
+        dxdt.template get<y>() =
+            sx.template get<v>() * dyn::math::sin(sx.template get<yaw>() + beta);
+        dxdt.template get<yaw>() = sx.template get<v>() / lr * dyn::math::sin(beta) * 1_rad;
+        dxdt.template get<v>() = u.template get<a>();
+    };
+});
 
 }  // namespace
 
 int main()
 {
-    for (auto result :
-         dyn::make_owning_step_range<KinematicBicycle, boost::numeric::odeint::runge_kutta4>(
+    namespace odeint = boost::numeric::odeint;
+
+    for (const auto result : kinematic_bicycle.integrate_range<odeint::runge_kutta4>(
              {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 3s, 100ms)) {
         std::cout << units::time::second_t{result.first} << ": " << result.second << std::endl;
     }
