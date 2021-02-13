@@ -23,9 +23,33 @@ class system {
     using real_type = typename State::real_type;
     using duration_type = typename State::duration_type;
 
+  private:
+    template <class, class = void>
+    struct is_odeint_form : std::false_type {};
+
+    template <class T>
+    struct is_odeint_form<
+        T,
+        tmp::void_t<decltype(std::declval<T>()(std::declval<Input>())(
+            std::declval<state>(), std::declval<deriv&>(), std::declval<duration_type>()))>>
+        : std::true_type {};
+
+    template <class, class = void>
+    struct is_state_space_form : std::false_type {};
+
+    template <class T>
+    struct is_state_space_form<
+        T,
+        tmp::void_t<decltype(std::declval<T>()(
+            std::declval<state>(), std::declval<input>(), std::declval<duration_type>()))>>
+        : std::true_type {};
+
+  public:
+    static constexpr bool tf_is_odeint_form = is_odeint_form<TransitionFunction>::value;
+    static constexpr bool tf_is_state_space_form = is_state_space_form<TransitionFunction>::value;
+
     static_assert(
-        std::is_void<decltype(std::declval<TransitionFunction>()(std::declval<input>())(
-            std::declval<state>(), std::declval<deriv&>(), std::declval<duration_type>()))>::value,
+        tf_is_odeint_form || tf_is_state_space_form,
         "The output of a `TransitionFunction` must have a signature similar to f(const state&, "
         "deriv&, duration_type`.");
 
@@ -48,8 +72,9 @@ class system {
                          const input& u,
                          tmp::type_identity_t<IntegrationStep> span,
                          IntegrationStep step) const
+        -> std::enable_if_t<tf_is_odeint_form,
+                            decltype(make_owning_step_range<Stepper>(*this, x0, u, span, step))>
     {
-
         return make_owning_step_range<specialize_stepper<Stepper>>(tf_(u), x0, span, step);
     }
 

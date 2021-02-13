@@ -89,7 +89,7 @@ class vector {
 
     static constexpr std::size_t size = sizeof...(Args) / 2;
 
-    template <int N>
+    template <int N = 1>
     using derivative = tmp::rebind_outer<
         tmp::interleave<
             keys,
@@ -100,7 +100,7 @@ class vector {
     constexpr vector() = default;
 
     template <class... Utypes,
-              class = std::enable_if_t<std::is_same<data_type, std::tuple<Utypes...>>::value>>
+              class = std::enable_if_t<std::is_constructible<data_type, Utypes...>::value>>
     constexpr vector(Utypes&&... args) : data_{std::forward<Utypes>(args)...}
     {}
 

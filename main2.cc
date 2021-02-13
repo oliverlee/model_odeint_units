@@ -44,6 +44,23 @@ const auto kinematic_bicycle = dyn::state_space::make_system<state, input>([](co
     };
 });
 
+const auto bike2 =
+    dyn::state_space::make_system<state, input>([](const auto& sx, const auto& u, auto t) {
+        (void)t;
+
+        constexpr auto lf = 1.105_m;
+        constexpr auto lr = 1.738_m;
+
+        const auto beta =
+            dyn::math::atan(lr / (lf + lr) * dyn::math::tan(u.template get<deltaf>()));
+
+        return state::template derivative<>{
+            sx.template get<v>() * dyn::math::cos(sx.template get<yaw>() + beta),
+            sx.template get<v>() * dyn::math::sin(sx.template get<yaw>() + beta),
+            sx.template get<v>() / lr * dyn::math::sin(beta) * 1_rad,
+            u.template get<a>()};
+    });
+
 }  // namespace
 
 int main()
