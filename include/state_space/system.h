@@ -48,7 +48,8 @@ class system {
     struct odeint_tag {};
     struct state_space_tag {};
 
-    using integrate_range_tag = std::conditional_t<tf_is_odeint_form, odeint_tag, state_space_tag>;
+    using transfer_function_form_tag =
+        std::conditional_t<tf_is_odeint_form, odeint_tag, state_space_tag>;
 
   public:
     static_assert(
@@ -77,29 +78,16 @@ class system {
                          tmp::type_identity_t<IntegrationStep> span,
                          IntegrationStep step) const
     {
-        return integrate_range<Stepper, IntegrationStep>(x0, u, span, step, integrate_range_tag{});
+        return make_owning_step_range<specialize_stepper<Stepper>>(
+            adapt_transfer_function(u, transfer_function_form_tag{}), x0, span, step);
     }
 
   private:
-    template <template <class...> class Stepper, class IntegrationStep>
-    auto integrate_range(const state& x0,
-                         const input& u,
-                         tmp::type_identity_t<IntegrationStep> span,
-                         IntegrationStep step,
-                         odeint_tag) const
-    {
-        return make_owning_step_range<specialize_stepper<Stepper>>(tf_(u), x0, span, step);
-    }
+    auto adapt_transfer_function(const input& u, odeint_tag) const { return tf_(u); }
 
-    template <template <class...> class Stepper, class IntegrationStep>
-    auto integrate_range(const state& x0,
-                         const input& u,
-                         tmp::type_identity_t<IntegrationStep> span,
-                         IntegrationStep step,
-                         state_space_tag) const
+    auto adapt_transfer_function(const input& u, state_space_tag) const
     {
-        const auto f = [this, u](const auto& x, auto& dxdt, auto t) { dxdt = tf_(x, u, t); };
-        return make_owning_step_range<specialize_stepper<Stepper>>(f, x0, span, step);
+        return [this, u](const auto& x, auto& dxdt, auto t) { dxdt = tf_(x, u, t); };
     }
 
     transition_function_type tf_;
