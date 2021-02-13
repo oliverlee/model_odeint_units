@@ -1,8 +1,8 @@
-#include "boost/numeric/odeint.hpp"
 #include "gcem_units.h"
 #include "iterator.h"
 #include "state_space/system.h"
 #include "state_space/vector.h"
+#include "stepper.h"
 #include "units.h"
 
 #include <chrono>
@@ -53,11 +53,17 @@ constexpr auto kinematic_bicycle = dyn::state_space::make_system<state, input>(f
 
 int main()
 {
-    namespace odeint = boost::numeric::odeint;
+    constexpr auto x1 = kinematic_bicycle.integrate<dyn::stepper::runge_kutta4>(
+        {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 100ms);
+    (void)x1;
 
-    std::cout << kinematic_bicycle.integrate<odeint::runge_kutta4>(
-                     {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 100ms)
-              << std::endl;
+    auto x = state{0_m, 0_m, 0_rad, 10_mps};
+
+    for (auto t = 100ms; t < 3s; t += 100ms) {
+        x = kinematic_bicycle.integrate<dyn::stepper::runge_kutta4>(x, {0_mps_sq, 0.2_rad}, 100ms);
+
+        std::cout << units::time::second_t{t} << ": " << x << std::endl;
+    }
 
     return 0;
 }

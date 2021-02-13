@@ -25,31 +25,47 @@ class system {
 
   private:
     template <class, class = void>
-    struct is_odeint_form : std::false_type {};
+    struct is_tf_odeint_form : std::false_type {};
 
     template <class T>
-    struct is_odeint_form<T,
-                          tmp::void_t<decltype(std::declval<T>()(input())(
-                              state(), std::declval<deriv&>(), duration_type()))>>
+    struct is_tf_odeint_form<T,
+                             tmp::void_t<decltype(std::declval<T>()(input())(
+                                 state(), std::declval<deriv&>(), duration_type()))>>
         : std::true_type {};
 
     template <class, class = void>
-    struct is_state_space_form : std::false_type {};
+    struct is_tf_state_space_form : std::false_type {};
 
     template <class T>
-    struct is_state_space_form<
+    struct is_tf_state_space_form<
         T,
         tmp::void_t<decltype(std::declval<T>()(state(), input(), duration_type()))>>
         : std::true_type {};
 
-    static constexpr bool tf_is_odeint_form = is_odeint_form<TransitionFunction>::value;
-    static constexpr bool tf_is_state_space_form = is_state_space_form<TransitionFunction>::value;
+    static constexpr bool tf_is_odeint_form = is_tf_odeint_form<TransitionFunction>::value;
+    static constexpr bool tf_is_state_space_form =
+        is_tf_state_space_form<TransitionFunction>::value;
 
-    struct odeint_tag {};
-    struct state_space_tag {};
+    struct odeint_tf_tag {};
+    struct state_space_tf_tag {};
 
     using transfer_function_form_tag =
-        std::conditional_t<tf_is_odeint_form, odeint_tag, state_space_tag>;
+        std::conditional_t<tf_is_odeint_form, odeint_tf_tag, state_space_tf_tag>;
+
+    struct odeint_stepper_tag {};
+    struct state_space_stepper_tag {};
+
+    template <class, class = void>
+    struct is_state_space_stepper : std::false_type {};
+
+    template <class T>
+    struct is_state_space_stepper<T, tmp::void_t<tmp::bool_constant<T::is_state_space_stepper>>>
+        : tmp::bool_constant<T::is_state_space_stepper> {};
+
+    template <class T>
+    using stepper_tag = std::conditional_t<is_state_space_stepper<T>::value,
+                                           state_space_stepper_tag,
+                                           odeint_stepper_tag>;
 
   public:
     static_assert(
@@ -83,22 +99,44 @@ class system {
     }
 
     template <template <class...> class Stepper, class IntegrationStep>
-    auto integrate(const state& x0, const input& u, IntegrationStep step) const
+    constexpr auto integrate(const state& x0, const input& u, IntegrationStep dt) const -> state
     {
-        auto stepper = specialize_stepper<Stepper>{};
+        using SpecializedStepper = specialize_stepper<Stepper>;
 
-        auto x = x0;
+        return do_step<SpecializedStepper>(x0, u, dt, stepper_tag<SpecializedStepper>{});
+    }
 
-        stepper.do_step(
-            adapt_transfer_function(u, transfer_function_form_tag{}), x, IntegrationStep{}, step);
+  private:
+    template <class Stepper, class IntegrationStep>
+    auto do_step(state x, const input& u, IntegrationStep dt, odeint_stepper_tag) const -> state
+    {
+        Stepper{}.do_step(
+            adapt_transfer_function(u, transfer_function_form_tag{}), x, IntegrationStep{}, dt);
 
         return x;
     }
 
-  private:
-    auto adapt_transfer_function(const input& u, odeint_tag) const { return tf_(u); }
+    template <class Stepper, class IntegrationStep>
+    constexpr auto
+    do_step(const state& x0, const input& u, IntegrationStep dt, state_space_stepper_tag) const
+        -> state
+    {
+        struct standard_form {
+            constexpr auto operator()(duration_type t, const state& x) const -> deriv
+            {
+                return tf(x, u, t);
+            }
 
-    auto adapt_transfer_function(const input& u, state_space_tag) const
+            const transition_function_type& tf;
+            input u;
+        };
+
+        return Stepper{}.step(standard_form{tf_, u}, x0, IntegrationStep{}, dt);
+    }
+
+    auto adapt_transfer_function(const input& u, odeint_tf_tag) const { return tf_(u); }
+
+    auto adapt_transfer_function(const input& u, state_space_tf_tag) const
     {
         return [this, u](const auto& x, auto& dxdt, auto t) { dxdt = tf_(x, u, t); };
     }

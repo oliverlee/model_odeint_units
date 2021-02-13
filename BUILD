@@ -58,6 +58,7 @@ cc_binary(
         "include/iterator.h",
         "include/state_space/system.h",
         "include/state_space/vector.h",
+        "include/stepper.h",
         "include/type_mapping.h",
         "include/type_traits.h",
         "main3.cc",

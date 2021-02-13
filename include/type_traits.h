@@ -12,6 +12,11 @@ namespace tmp {
 template <class...>
 using void_t = void;
 
+/// @brief A helper alias template for the common case where T is bool
+/// @see https://en.cppreference.com/w/cpp/types/integral_constant
+template <bool B>
+using bool_constant = std::integral_constant<bool, B>;
+
 /// @brief Checks if a type is a template specialization
 /// @see http://open-std.org/JTC1/SC22/WG21/docs/papers/2020/p2098r1.pdf
 template <class T, template <class...> class Primary>
