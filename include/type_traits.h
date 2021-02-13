@@ -7,6 +7,11 @@
 namespace dyn {
 namespace tmp {
 
+/// @brief Utility metafunction that maps a sequence of any types to the type void
+/// @see https://en.cppreference.com/w/cpp/types/void_t
+template <class...>
+using void_t = void;
+
 /// @brief Checks if a type is a template specialization
 /// @see http://open-std.org/JTC1/SC22/WG21/docs/papers/2020/p2098r1.pdf
 template <class T, template <class...> class Primary>

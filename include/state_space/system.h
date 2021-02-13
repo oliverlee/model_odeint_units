@@ -43,8 +43,6 @@ class system {
     constexpr system(T&& t) : tf_{std::forward<T>(t)}
     {}
 
-    constexpr auto state_transition(const input& u) const { return tf_(u); }
-
     template <template <class...> class Stepper, class IntegrationStep>
     auto integrate_range(const state& x0,
                          const input& u,
@@ -52,7 +50,7 @@ class system {
                          IntegrationStep step) const
     {
 
-        return make_owning_step_range<Stepper>(*this, x0, u, span, step);
+        return make_owning_step_range<specialize_stepper<Stepper>>(tf_(u), x0, span, step);
     }
 
   private:
