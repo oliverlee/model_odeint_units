@@ -13,14 +13,14 @@ template <class State, class Input, class TransitionFunction>
 class system {
   public:
     static_assert(tmp::is_specialization_of<Input, vector>::value,
-                  "`State` must be a specialization of `state_space::vector`.");
+                  "`Input` must be a specialization of `state_space::vector`.");
     static_assert(tmp::is_specialization_of<State, vector>::value,
                   "`State` must be a specialization of `state_space::vector`.");
 
     using input = Input;
     using state = State;
-    using deriv = typename State::template derivative<1>;
-    using real_type = typename State::real_type;
+    using deriv = typename State::template derivative<>;
+    using scalar_type = typename State::real_type;
     using duration_type = typename State::duration_type;
 
   private:
@@ -28,10 +28,9 @@ class system {
     struct is_odeint_form : std::false_type {};
 
     template <class T>
-    struct is_odeint_form<
-        T,
-        tmp::void_t<decltype(std::declval<T>()(std::declval<Input>())(
-            std::declval<state>(), std::declval<deriv&>(), std::declval<duration_type>()))>>
+    struct is_odeint_form<T,
+                          tmp::void_t<decltype(std::declval<T>()(input())(
+                              state(), std::declval<deriv&>(), duration_type()))>>
         : std::true_type {};
 
     template <class, class = void>
@@ -40,24 +39,29 @@ class system {
     template <class T>
     struct is_state_space_form<
         T,
-        tmp::void_t<decltype(std::declval<T>()(
-            std::declval<state>(), std::declval<input>(), std::declval<duration_type>()))>>
+        tmp::void_t<decltype(std::declval<T>()(state(), input(), duration_type()))>>
         : std::true_type {};
 
-  public:
     static constexpr bool tf_is_odeint_form = is_odeint_form<TransitionFunction>::value;
     static constexpr bool tf_is_state_space_form = is_state_space_form<TransitionFunction>::value;
 
+    struct odeint_tag {};
+    struct state_space_tag {};
+
+    using integrate_range_tag = std::conditional_t<tf_is_odeint_form, odeint_tag, state_space_tag>;
+
+  public:
     static_assert(
         tf_is_odeint_form || tf_is_state_space_form,
         "The output of a `TransitionFunction` must have a signature similar to f(const state&, "
-        "deriv&, duration_type`.");
+        "deriv&, duration_type` or must be callable with the signature f(const state&, const "
+        "input&, duration_type) -> deriv.");
 
     using transition_function_type = TransitionFunction;
 
     template <template <class...> class Stepper>
     using specialize_stepper = Stepper<state,
-                                       real_type,
+                                       scalar_type,
                                        deriv,
                                        duration_type,
                                        boost::numeric::odeint::vector_space_algebra>;
@@ -72,13 +76,32 @@ class system {
                          const input& u,
                          tmp::type_identity_t<IntegrationStep> span,
                          IntegrationStep step) const
-        -> std::enable_if_t<tf_is_odeint_form,
-                            decltype(make_owning_step_range<Stepper>(*this, x0, u, span, step))>
+    {
+        return integrate_range<Stepper, IntegrationStep>(x0, u, span, step, integrate_range_tag{});
+    }
+
+  private:
+    template <template <class...> class Stepper, class IntegrationStep>
+    auto integrate_range(const state& x0,
+                         const input& u,
+                         tmp::type_identity_t<IntegrationStep> span,
+                         IntegrationStep step,
+                         odeint_tag) const
     {
         return make_owning_step_range<specialize_stepper<Stepper>>(tf_(u), x0, span, step);
     }
 
-  private:
+    template <template <class...> class Stepper, class IntegrationStep>
+    auto integrate_range(const state& x0,
+                         const input& u,
+                         tmp::type_identity_t<IntegrationStep> span,
+                         IntegrationStep step,
+                         state_space_tag) const
+    {
+        const auto f = [this, u](const auto& x, auto& dxdt, auto t) { dxdt = tf_(x, u, t); };
+        return make_owning_step_range<specialize_stepper<Stepper>>(f, x0, span, step);
+    }
+
     transition_function_type tf_;
 };
 
