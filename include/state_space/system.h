@@ -82,6 +82,19 @@ class system {
             adapt_transfer_function(u, transfer_function_form_tag{}), x0, span, step);
     }
 
+    template <template <class...> class Stepper, class IntegrationStep>
+    auto integrate(const state& x0, const input& u, IntegrationStep step) const
+    {
+        auto stepper = specialize_stepper<Stepper>{};
+
+        auto x = x0;
+
+        stepper.do_step(
+            adapt_transfer_function(u, transfer_function_form_tag{}), x, IntegrationStep{}, step);
+
+        return x;
+    }
+
   private:
     auto adapt_transfer_function(const input& u, odeint_tag) const { return tf_(u); }
 

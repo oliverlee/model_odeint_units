@@ -26,8 +26,12 @@ using input = dyn::state_space::vector<struct a,
                                        units::acceleration::meters_per_second_squared_t,
                                        struct deltaf,
                                        units::angle::radian_t>;
-const auto kinematic_bicycle =
-    dyn::state_space::make_system<state, input>([](const auto& sx, const auto& u, auto t) {
+using deriv = state::derivative<1>;
+
+struct f {
+    constexpr auto operator()(const state& sx, const input& u, state::duration_type t) const
+        -> deriv
+    {
         (void)t;
 
         constexpr auto lf = 1.105_m;
@@ -36,12 +40,14 @@ const auto kinematic_bicycle =
         const auto beta =
             dyn::math::atan(lr / (lf + lr) * dyn::math::tan(u.template get<deltaf>()));
 
-        return state::template derivative<>{
-            sx.template get<v>() * dyn::math::cos(sx.template get<yaw>() + beta),
-            sx.template get<v>() * dyn::math::sin(sx.template get<yaw>() + beta),
-            sx.template get<v>() / lr * dyn::math::sin(beta) * 1_rad,
-            u.template get<a>()};
-    });
+        return {sx.template get<v>() * dyn::math::cos(sx.template get<yaw>() + beta),
+                sx.template get<v>() * dyn::math::sin(sx.template get<yaw>() + beta),
+                sx.template get<v>() / lr * dyn::math::sin(beta) * 1_rad,
+                u.template get<a>()};
+    }
+};
+
+constexpr auto kinematic_bicycle = dyn::state_space::make_system<state, input>(f{});
 
 }  // namespace
 
@@ -49,10 +55,9 @@ int main()
 {
     namespace odeint = boost::numeric::odeint;
 
-    for (const auto result : kinematic_bicycle.integrate_range<odeint::runge_kutta4>(
-             {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 3s, 100ms)) {
-        std::cout << units::time::second_t{result.first} << ": " << result.second << std::endl;
-    }
+    std::cout << kinematic_bicycle.integrate<odeint::runge_kutta4>(
+                     {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 100ms)
+              << std::endl;
 
     return 0;
 }
