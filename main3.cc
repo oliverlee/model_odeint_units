@@ -26,23 +26,22 @@ using input = dyn::state_space::vector<struct a,
                                        units::acceleration::meters_per_second_squared_t,
                                        struct deltaf,
                                        units::angle::radian_t>;
+const auto kinematic_bicycle =
+    dyn::state_space::make_system<state, input>([](const auto& sx, const auto& u, auto t) {
+        (void)t;
 
-const auto kinematic_bicycle = dyn::state_space::make_system<state, input>([](const auto& u) {
-    return [u](const auto& sx, auto& dxdt, auto) {
         constexpr auto lf = 1.105_m;
         constexpr auto lr = 1.738_m;
 
         const auto beta =
             dyn::math::atan(lr / (lf + lr) * dyn::math::tan(u.template get<deltaf>()));
 
-        dxdt.template get<x>() =
-            sx.template get<v>() * dyn::math::cos(sx.template get<yaw>() + beta);
-        dxdt.template get<y>() =
-            sx.template get<v>() * dyn::math::sin(sx.template get<yaw>() + beta);
-        dxdt.template get<yaw>() = sx.template get<v>() / lr * dyn::math::sin(beta) * 1_rad;
-        dxdt.template get<v>() = u.template get<a>();
-    };
-});
+        return state::template derivative<>{
+            sx.template get<v>() * dyn::math::cos(sx.template get<yaw>() + beta),
+            sx.template get<v>() * dyn::math::sin(sx.template get<yaw>() + beta),
+            sx.template get<v>() / lr * dyn::math::sin(beta) * 1_rad,
+            u.template get<a>()};
+    });
 
 }  // namespace
 
