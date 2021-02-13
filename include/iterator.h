@@ -1,5 +1,6 @@
 #pragma once
 
+#include "stepper.h"
 #include "type_traits.h"
 
 #include <chrono>
@@ -10,14 +11,14 @@
 namespace dyn {
 
 template <class Iterator>
-auto adapt_rangepair(std::pair<Iterator, Iterator> rp)
+constexpr auto adapt_rangepair(std::pair<Iterator, Iterator> rp)
 {
     struct range {
-        decltype(rp.first) begin_;
-        decltype(rp.second) end_;
+        Iterator begin_;
+        Iterator end_;
 
-        auto begin() { return begin_; }
-        auto end() { return end_; }
+        constexpr auto begin() { return begin_; }
+        constexpr auto end() { return end_; }
     };
 
     return range{rp.first, rp.second};
@@ -42,29 +43,29 @@ class owning_step_iterator {
                                 std::add_lvalue_reference_t<state_type>>;
     using iterator_category = std::input_iterator_tag;
 
-    owning_step_iterator(system_type sys,
-                         state_type x0,
-                         iterator_step_type span,
-                         iterator_step_type step)
+    constexpr owning_step_iterator(system_type sys,
+                                   state_type x0,
+                                   iterator_step_type span,
+                                   iterator_step_type step)
         : system_{std::move(sys)}, state_{std::move(x0)}, span_{span}, step_{step}
     {}
 
-    owning_step_iterator(system_type sys) : system_{std::move(sys)} {}
+    constexpr owning_step_iterator(system_type sys) : system_{std::move(sys)} {}
 
     auto operator++() noexcept -> iterator&
     {
-        increment();
+        increment(stepper::stepper_tag<Stepper>{});
         return *this;
     }
 
     auto operator++(int) noexcept -> iterator
     {
         auto self = *this;
-        increment();
+        increment(stepper::stepper_tag<Stepper>{});
         return self;
     }
 
-    auto operator==(const owning_step_iterator& other) const noexcept -> bool
+    constexpr auto operator==(const owning_step_iterator& other) const noexcept -> bool
     {
         if (other.at_end()) {
             return at_end();
@@ -73,21 +74,30 @@ class owning_step_iterator {
         return (span_ == other.span_) && (step_ == other.step_) && (elapsed_ == other.elapsed_);
     }
 
-    auto operator!=(const owning_step_iterator& other) const noexcept -> bool
+    constexpr auto operator!=(const owning_step_iterator& other) const noexcept -> bool
     {
         return !(*this == other);
     }
 
-    auto operator*() -> reference { return std::make_pair(std::ref(elapsed_), std::ref(state_)); }
+    constexpr auto operator*() -> reference
+    {
+        return std::make_pair(std::ref(elapsed_), std::ref(state_));
+    }
 
   private:
-    auto increment() -> void
+    auto increment(stepper::odeint_tag) -> void
     {
         stepper_type{}.do_step(system_, state_, elapsed_, step_);
         elapsed_ += step_;
     }
 
-    auto at_end() const noexcept -> bool { return elapsed_ >= span_; }
+    auto increment(stepper::state_space_tag) -> void
+    {
+        state_ = stepper_type{}.step(system_, state_, elapsed_, step_);
+        elapsed_ += step_;
+    }
+
+    constexpr auto at_end() const noexcept -> bool { return elapsed_ >= span_; }
 
     system_type system_;
     state_type state_ = {};
@@ -97,10 +107,10 @@ class owning_step_iterator {
 };
 
 template <class Stepper, class System, class State, class StepDuration>
-auto make_owning_step_range(const System& sys,
-                            const State& x0,
-                            tmp::type_identity_t<StepDuration> span,
-                            StepDuration step)
+constexpr auto make_owning_step_range(const System& sys,
+                                      const State& x0,
+                                      tmp::type_identity_t<StepDuration> span,
+                                      StepDuration step)
 {
     return adapt_rangepair(std::make_pair(
         owning_step_iterator<Stepper, System, State, StepDuration>(sys, x0, span, step),

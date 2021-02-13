@@ -15,6 +15,19 @@ struct is_function<Function,
                    tmp::void_t<decltype(std::declval<Function>()(
                        std::declval<Time>(), std::declval<const State&>()))>> : std::true_type {};
 
+template <class, class = void>
+struct is_state_space_stepper : std::false_type {};
+
+template <class T>
+struct is_state_space_stepper<T, tmp::void_t<tmp::bool_constant<T::is_state_space_stepper>>>
+    : tmp::bool_constant<T::is_state_space_stepper> {};
+
+struct odeint_tag {};
+struct state_space_tag {};
+
+template <class T>
+using stepper_tag =
+    std::conditional_t<is_state_space_stepper<T>::value, state_space_tag, odeint_tag>;
 
 template <class State, class Scalar, class Deriv, class StepDuration, class Unused = void>
 struct runge_kutta4 {

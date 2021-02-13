@@ -49,6 +49,9 @@ struct f {
 
 constexpr auto kinematic_bicycle = dyn::state_space::make_system<state, input>(f{});
 
+auto integration_range = kinematic_bicycle.integrate_range<dyn::stepper::runge_kutta4>(
+    {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 3s, 100ms);
+
 }  // namespace
 
 int main()
@@ -57,12 +60,8 @@ int main()
         {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 100ms);
     (void)x1;
 
-    auto x = state{0_m, 0_m, 0_rad, 10_mps};
-
-    for (auto t = 100ms; t < 3s; t += 100ms) {
-        x = kinematic_bicycle.integrate<dyn::stepper::runge_kutta4>(x, {0_mps_sq, 0.2_rad}, 100ms);
-
-        std::cout << units::time::second_t{t} << ": " << x << std::endl;
+    for (const auto result : integration_range) {
+        std::cout << units::time::second_t{result.first} << ": " << result.second << std::endl;
     }
 
     return 0;
