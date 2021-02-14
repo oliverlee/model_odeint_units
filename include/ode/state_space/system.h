@@ -12,7 +12,10 @@
 namespace ode {
 namespace state_space {
 
-template <class State, class Input, class TransitionFunction>
+template <class State,
+          class Input,
+          class TransitionFunction,
+          class Scalar = units::unit_t<units::dimensionless::scalar, double>>
 class system {
   public:
     static_assert(tmp::is_specialization_of<Input, vector>::value,
@@ -23,7 +26,7 @@ class system {
     using input = Input;
     using state = State;
     using deriv = typename State::template derivative<>;
-    using scalar_type = typename State::real_type;
+    using scalar_type = Scalar;
     using duration_type = typename State::duration_type;
 
   private:

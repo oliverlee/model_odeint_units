@@ -84,8 +84,7 @@ class vector {
         "Vector value types must use the same underlying type.");
 
     using data_type = tmp::rebind_outer<values, std::tuple>;
-    using real_type = first_underlying_type;
-    using duration_type = units::unit_t<units::time::second, real_type>;
+    using duration_type = units::unit_t<units::time::second, first_underlying_type>;
 
     static constexpr std::size_t size = sizeof...(Args) / 2;
 
@@ -125,11 +124,11 @@ class vector {
         return *this;
     }
 
-    constexpr auto operator*=(real_type a) -> vector&
+    template <class Scalar>
+    constexpr auto operator*=(Scalar a)
+        -> std::enable_if_t<units::traits::is_dimensionless_unit<Scalar>::value, vector&>
     {
-        const auto k = units::unit_t<units::dimensionless::scalar, real_type>{a};
-
-        for_each(detail::elementwise_scalar_multiply<decltype(k)>{k});
+        for_each(detail::elementwise_scalar_multiply<Scalar>{a});
 
         return *this;
     }
@@ -191,17 +190,18 @@ constexpr auto operator+(const Vector& x, const Vector& y) -> Vector
     return z += y;
 }
 
-template <class Real, class Vector>
-constexpr auto operator*(Real a, const Vector& x)
-    -> std::enable_if_t<std::is_convertible<Real, typename Vector::real_type>::value, Vector>
+template <class Scalar, class Vector>
+constexpr auto operator*(Scalar a, const Vector& x)
+    -> std::enable_if_t<units::traits::is_dimensionless_unit<Scalar>::value, Vector>
 {
     auto y = x;
-    return y *= typename Vector::real_type{a};
+    return y *= a;
 }
 
 template <class Duration, class Vector>
 constexpr auto operator*(Duration t, const Vector& x)
-    -> std::enable_if_t<std::is_convertible<Duration, typename Vector::duration_type>::value,
+    -> std::enable_if_t<!units::traits::is_dimensionless_unit<Duration>::value &&
+                            std::is_convertible<Duration, typename Vector::duration_type>::value,
                         typename Vector::template derivative<-1>>
 {
     return x * typename Vector::duration_type{t};
