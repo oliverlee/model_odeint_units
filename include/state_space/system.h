@@ -6,6 +6,9 @@
 #include "type_traits.h"
 #include "units.h"
 
+#include <array>
+#include <utility>
+
 namespace dyn {
 namespace state_space {
 
@@ -97,6 +100,23 @@ class system {
         return do_step<SpecializedStepper>(x0, u, dt, stepper::stepper_tag<SpecializedStepper>{});
     }
 
+    template <template <class...> class Stepper,
+              class SpanType,
+              std::size_t SpanValue,
+              class StepType,
+              std::size_t StepValue>
+    constexpr auto integrate_trajectory(const state& x0, const input& u) const
+    {
+        static_assert(dyn::tmp::is_specialization_of<SpanType, std::chrono::duration>::value, "");
+        static_assert(dyn::tmp::is_specialization_of<StepType, std::chrono::duration>::value, "");
+
+        constexpr auto dt = StepType{StepValue};
+        constexpr auto steps = SpanType{SpanValue} / dt;
+        static_assert(steps >= 0, "");
+
+        return make_trajectory_impl<Stepper>(x0, u, dt, std::make_index_sequence<steps>{});
+    }
+
   private:
     template <class Stepper, class IntegrationStep>
     auto do_step(state x, const input& u, IntegrationStep dt, stepper::odeint_tag) const -> state
@@ -140,6 +160,38 @@ class system {
         };
 
         return standard_form{tf_, u};
+    }
+
+    template <template <class...> class Stepper, class System, class Duration, std::size_t N>
+    struct invoker {
+        template <std::size_t I = N, std::enable_if_t<I == 0, bool> = true>
+        constexpr auto operator()() const
+        {
+            return x;
+        }
+
+        template <std::size_t I = N, std::enable_if_t<I != 0, bool> = true>
+        constexpr auto operator()() const
+        {
+            return invoker<Stepper, System, Duration, I - 1>{
+                system, system.template integrate<Stepper>(x, u, dt), u, dt}();
+        }
+
+        const System& system;
+        state x;
+        input u;
+        Duration dt;
+    };
+
+    template <template <class...> class Stepper, class Duration, std::size_t... Is>
+    constexpr auto make_trajectory_impl(const state& x0,
+                                        const input& u,
+                                        Duration dt,
+                                        std::index_sequence<Is...>) const
+        -> std::array<std::pair<Duration, state>, sizeof...(Is)>
+    {
+        return {
+            std::make_pair(Is * dt, invoker<Stepper, system, Duration, Is>{*this, x0, u, dt}())...};
     }
 
     transition_function_type tf_;

@@ -5,10 +5,8 @@
 #include "stepper.h"
 #include "units.h"
 
-#include <array>
 #include <chrono>
 #include <iostream>
-#include <utility>
 
 namespace {
 
@@ -51,55 +49,12 @@ struct f {
 
 constexpr auto kinematic_bicycle = dyn::state_space::make_system<state, input>(f{});
 
-template <class System, class Duration, std::size_t N>
-struct invoker {
-    template <std::size_t I = N, std::enable_if_t<I == 0, bool> = true>
-    constexpr auto operator()() const
-    {
-        return x;
-    }
-
-    template <std::size_t I = N, std::enable_if_t<I != 0, bool> = true>
-    constexpr auto operator()() const
-    {
-        return invoker<System, Duration, I - 1>{
-            system, system.template integrate<dyn::stepper::runge_kutta4>(x, u, dt), u, dt}();
-    }
-
-    const System& system;
-    state x;
-    input u;
-    Duration dt;
-};
-
-template <class System, class Duration, std::size_t... Is>
-constexpr auto make_trajectory_impl(
-    const System& sys, const state& x0, const input& u, Duration dt, std::index_sequence<Is...>)
-    -> std::array<std::pair<Duration, state>, sizeof...(Is)>
-{
-    return {std::make_pair(Is * dt, invoker<System, Duration, Is>{sys, x0, u, dt}())...};
-}
-
-template <class SpanType,
-          std::size_t SpanValue,
-          class StepType,
-          std::size_t StepValue,
-          class System>
-constexpr auto make_trajectory(const System& sys, const state& x0, const input& u)
-{
-    static_assert(dyn::tmp::is_specialization_of<SpanType, std::chrono::duration>::value, "");
-    static_assert(dyn::tmp::is_specialization_of<StepType, std::chrono::duration>::value, "");
-
-    constexpr auto dt = StepType{StepValue};
-    constexpr auto steps = SpanType{SpanValue} / dt;
-    static_assert(steps >= 0, "");
-
-    return make_trajectory_impl(sys, x0, u, dt, std::make_index_sequence<steps>{});
-}
-
 constexpr auto trajectory =
-    make_trajectory<std::chrono::seconds, 3, std::chrono::milliseconds, 100>(
-        kinematic_bicycle, {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad});
+    kinematic_bicycle.integrate_trajectory<dyn::stepper::runge_kutta4,
+                                           std::chrono::seconds,
+                                           3,
+                                           std::chrono::milliseconds,
+                                           100>({0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad});
 
 }  // namespace
 
