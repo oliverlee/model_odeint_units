@@ -8,7 +8,7 @@
 #include <iterator>
 #include <utility>
 
-namespace dyn {
+namespace ode {
 
 template <class Iterator>
 constexpr auto adapt_rangepair(std::pair<Iterator, Iterator> rp)
@@ -133,4 +133,4 @@ auto make_owning_step_range(const typename Model::state& x0,
         Model::state_transition(u), x0, span, step);
 }
 
-}  // namespace dyn
+}  // namespace ode

@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace dyn {
+namespace ode {
 namespace tmp {
 namespace mapping {
 
@@ -98,4 +98,4 @@ using index_map = typename detail::index_map_impl<list<>, Ks...>::type;
 
 }  // namespace mapping
 }  // namespace tmp
-}  // namespace dyn
+}  // namespace ode

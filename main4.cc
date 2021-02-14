@@ -13,7 +13,7 @@ namespace {
 using namespace units::literals;
 using namespace std::literals::chrono_literals;
 
-using state = dyn::state_space::vector<struct x,
+using state = ode::state_space::vector<struct x,
                                        units::length::meter_t,
                                        struct y,
                                        units::length::meter_t,
@@ -22,7 +22,7 @@ using state = dyn::state_space::vector<struct x,
                                        struct v,
                                        units::velocity::meters_per_second_t>;
 
-using input = dyn::state_space::vector<struct a,
+using input = ode::state_space::vector<struct a,
                                        units::acceleration::meters_per_second_squared_t,
                                        struct deltaf,
                                        units::angle::radian_t>;
@@ -38,19 +38,19 @@ struct f {
         constexpr auto lr = 1.738_m;
 
         const auto beta =
-            dyn::math::atan(lr / (lf + lr) * dyn::math::tan(u.template get<deltaf>()));
+            ode::math::atan(lr / (lf + lr) * ode::math::tan(u.template get<deltaf>()));
 
-        return {sx.template get<v>() * dyn::math::cos(sx.template get<yaw>() + beta),
-                sx.template get<v>() * dyn::math::sin(sx.template get<yaw>() + beta),
-                sx.template get<v>() / lr * dyn::math::sin(beta) * 1_rad,
+        return {sx.template get<v>() * ode::math::cos(sx.template get<yaw>() + beta),
+                sx.template get<v>() * ode::math::sin(sx.template get<yaw>() + beta),
+                sx.template get<v>() / lr * ode::math::sin(beta) * 1_rad,
                 u.template get<a>()};
     }
 };
 
-constexpr auto kinematic_bicycle = dyn::state_space::make_system<state, input>(f{});
+constexpr auto kinematic_bicycle = ode::state_space::make_system<state, input>(f{});
 
 constexpr auto trajectory =
-    kinematic_bicycle.integrate_trajectory<dyn::stepper::runge_kutta4,
+    kinematic_bicycle.integrate_trajectory<ode::stepper::runge_kutta4,
                                            std::chrono::seconds,
                                            3,
                                            std::chrono::milliseconds,

@@ -2,7 +2,7 @@
 
 #include "units.h"
 
-namespace dyn {
+namespace ode {
 
 template <class Unit>
 class unit_proxy {
@@ -27,4 +27,4 @@ auto operator<<(std::ostream& os, const UnitProxy& p)
     return os << typename UnitProxy::unit_type(p);
 }
 
-}  // namespace dyn
+}  // namespace ode

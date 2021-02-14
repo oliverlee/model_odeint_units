@@ -2,7 +2,7 @@
 
 #include "type_traits.h"
 
-namespace dyn {
+namespace ode {
 namespace stepper {
 
 template <class Function, class Time, class State, class = void>
@@ -57,4 +57,4 @@ struct runge_kutta4 {
 };
 
 }  // namespace stepper
-}  // namespace dyn
+}  // namespace ode

@@ -3,7 +3,7 @@
 #include "gcem.hpp"
 #include "units.h"
 
-namespace dyn {
+namespace ode {
 namespace math {
 
 template <class AngleUnit>
@@ -38,4 +38,4 @@ constexpr auto atan(const ScalarUnit x) noexcept
 }
 
 }  // namespace math
-}  // namespace dyn
+}  // namespace ode

@@ -10,7 +10,7 @@
 #include <ostream>
 #include <ratio>
 
-namespace dyn {
+namespace ode {
 
 namespace detail {
 
@@ -197,4 +197,4 @@ auto operator<<(std::ostream& os, const State& s)
     return os << "{" << s.x << ", " << s.y << ", " << s.yaw << ", " << s.v << "}";
 }
 
-}  // namespace dyn
+}  // namespace ode

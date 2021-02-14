@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace dyn {
+namespace ode {
 namespace tmp {
 
 /// @brief Utility metafunction that maps a sequence of any types to the type void
@@ -281,4 +281,4 @@ template <class L>
 using front = typename detail::front_impl<L>::type;
 
 }  // namespace tmp
-}  // namespace dyn
+}  // namespace ode

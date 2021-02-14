@@ -12,12 +12,12 @@ int main()
     using namespace std::literals::chrono_literals;
     namespace odeint = boost::numeric::odeint;
 
-    using Model = dyn::model<double, std::ratio<1105, 1000>, std::ratio<1738, 1000>>;
+    using Model = ode::model<double, std::ratio<1105, 1000>, std::ratio<1738, 1000>>;
 
     std::cout << std::left << std::setprecision(3) << std::fixed;
     std::cout << Model{} << std::endl;
 
-    for (auto result : dyn::make_owning_step_range<Model, odeint::runge_kutta4>(
+    for (auto result : ode::make_owning_step_range<Model, odeint::runge_kutta4>(
              {0_m, 0_m, 0_rad, 10_mps}, {0_mps_sq, 0.2_rad}, 3s, 100ms)) {
         std::cout << units::time::second_t{result.first} << ": " << result.second << std::endl;
     }

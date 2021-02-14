@@ -9,7 +9,7 @@
 #include <array>
 #include <utility>
 
-namespace dyn {
+namespace ode {
 namespace state_space {
 
 template <class State, class Input, class TransitionFunction>
@@ -107,8 +107,8 @@ class system {
               std::size_t StepValue>
     constexpr auto integrate_trajectory(const state& x0, const input& u) const
     {
-        static_assert(dyn::tmp::is_specialization_of<SpanType, std::chrono::duration>::value, "");
-        static_assert(dyn::tmp::is_specialization_of<StepType, std::chrono::duration>::value, "");
+        static_assert(ode::tmp::is_specialization_of<SpanType, std::chrono::duration>::value, "");
+        static_assert(ode::tmp::is_specialization_of<StepType, std::chrono::duration>::value, "");
 
         constexpr auto dt = StepType{StepValue};
         constexpr auto steps = SpanType{SpanValue} / dt;
@@ -217,4 +217,4 @@ constexpr auto make_system(TransitionFunction&& tf)
 }
 
 }  // namespace state_space
-}  // namespace dyn
+}  // namespace ode

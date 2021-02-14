@@ -7,7 +7,7 @@
 #include <iosfwd>
 #include <tuple>
 
-namespace dyn {
+namespace ode {
 namespace state_space {
 
 namespace detail {
@@ -228,4 +228,4 @@ auto operator<<(std::ostream& os, const Vector& v)
 }
 
 }  // namespace state_space
-}  // namespace dyn
+}  // namespace ode
