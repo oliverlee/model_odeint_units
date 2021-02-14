@@ -57,7 +57,6 @@ cc_binary(
     ],
     includes = ["include"],
     deps = [
-        "@boost//:numeric_odeint",
         "@gcem",
         "@units",
     ],
@@ -71,7 +70,6 @@ cc_binary(
     ],
     includes = ["include"],
     deps = [
-        "@boost//:numeric_odeint",
         "@gcem",
         "@units",
     ],

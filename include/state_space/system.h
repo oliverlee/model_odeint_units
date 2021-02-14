@@ -1,6 +1,5 @@
 #pragma once
 
-#include "boost/numeric/odeint.hpp"
 #include "iterator.h"
 #include "state_space/vector.h"
 #include "stepper.h"
@@ -66,8 +65,12 @@ class system {
     using specialize_stepper = Stepper<state,
                                        scalar_type,
                                        deriv,
-                                       duration_type,
-                                       boost::numeric::odeint::vector_space_algebra>;
+                                       duration_type
+#ifdef BOOST_NUMERIC_ODEINT_HPP_INCLUDED
+                                       ,
+                                       boost::numeric::odeint::vector_space_algebra
+#endif  // BOOST_NUMERIC_ODEINT_HPP_INCLUDED
+                                       >;
 
     template <class T,
               class = std::enable_if_t<std::is_convertible<T, transition_function_type>::value>>
