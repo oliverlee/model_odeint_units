@@ -1,7 +1,7 @@
 #pragma once
 
-#include "stepper.h"
-#include "type_traits.h"
+#include "ode/stepper.h"
+#include "ode/tmp/type_traits.h"
 
 #include <chrono>
 #include <functional>

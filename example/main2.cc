@@ -1,8 +1,7 @@
 #include "boost/numeric/odeint.hpp"
-#include "gcem_units.h"
-#include "iterator.h"
-#include "state_space/system.h"
-#include "state_space/vector.h"
+#include "ode/iterator.h"
+#include "ode/state_space/system.h"
+#include "ode/state_space/vector.h"
 #include "units.h"
 
 #include <chrono>
@@ -33,13 +32,13 @@ const auto kinematic_bicycle = ode::state_space::make_system<state, input>([](co
         constexpr auto lr = 1.738_m;
 
         const auto beta =
-            ode::math::atan(lr / (lf + lr) * ode::math::tan(u.template get<deltaf>()));
+            units::math::atan(lr / (lf + lr) * units::math::tan(u.template get<deltaf>()));
 
         dxdt.template get<x>() =
-            sx.template get<v>() * ode::math::cos(sx.template get<yaw>() + beta);
+            sx.template get<v>() * units::math::cos(sx.template get<yaw>() + beta);
         dxdt.template get<y>() =
-            sx.template get<v>() * ode::math::sin(sx.template get<yaw>() + beta);
-        dxdt.template get<yaw>() = sx.template get<v>() / lr * ode::math::sin(beta) * 1_rad;
+            sx.template get<v>() * units::math::sin(sx.template get<yaw>() + beta);
+        dxdt.template get<yaw>() = sx.template get<v>() / lr * units::math::sin(beta) * 1_rad;
         dxdt.template get<v>() = u.template get<a>();
     };
 });

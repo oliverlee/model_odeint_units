@@ -20,7 +20,6 @@ cc_binary(
     ],
     deps = [
         "//:ode_with_boost_odeint",
-        "//:ode_with_gcem",
     ],
     copts = COPTS,
 )

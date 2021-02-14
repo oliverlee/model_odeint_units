@@ -1,8 +1,8 @@
 #pragma once
 
 #include "boost/numeric/odeint.hpp"
-#include "type_traits.h"
-#include "unit_proxy.h"
+#include "ode/tmp/type_traits.h"
+#include "ode/unit_proxy.h"
 #include "units.h"
 
 #include <array>

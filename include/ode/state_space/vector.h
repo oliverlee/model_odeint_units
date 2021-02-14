@@ -1,7 +1,7 @@
 #pragma once
 
-#include "type_mapping.h"
-#include "type_traits.h"
+#include "ode/tmp/type_mapping.h"
+#include "ode/tmp/type_traits.h"
 #include "units.h"
 
 #include <iosfwd>

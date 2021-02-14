@@ -1,9 +1,9 @@
 #pragma once
 
-#include "iterator.h"
-#include "state_space/vector.h"
-#include "stepper.h"
-#include "type_traits.h"
+#include "ode/iterator.h"
+#include "ode/state_space/vector.h"
+#include "ode/stepper.h"
+#include "ode/tmp/type_traits.h"
 #include "units.h"
 
 #include <array>

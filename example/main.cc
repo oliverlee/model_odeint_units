@@ -1,6 +1,6 @@
 #include "boost/numeric/odeint.hpp"
-#include "iterator.h"
-#include "model.h"
+#include "ode/iterator.h"
+#include "ode/model.h"
 #include "units.h"
 
 #include <iostream>

@@ -3,12 +3,12 @@ package(default_visibility = ["//example:__pkg__"])
 cc_library(
     name = "ode",
     hdrs = [
-        "include/iterator.h",
-        "include/state_space/system.h",
-        "include/state_space/vector.h",
-        "include/stepper.h",
-        "include/type_mapping.h",
-        "include/type_traits.h",
+        "include/ode/iterator.h",
+        "include/ode/state_space/system.h",
+        "include/ode/state_space/vector.h",
+        "include/ode/stepper.h",
+        "include/ode/tmp/type_mapping.h",
+        "include/ode/tmp/type_traits.h",
     ],
     strip_include_prefix = "include",
     defines = [
@@ -28,8 +28,8 @@ cc_library(
 cc_library(
     name = "ode_with_boost_odeint",
     hdrs = [
-        "include/model.h",
-        "include/unit_proxy.h",
+        "include/ode/model.h",
+        "include/ode/unit_proxy.h",
     ],
     strip_include_prefix = "include",
     deps = [
@@ -41,7 +41,7 @@ cc_library(
 cc_library(
     name = "ode_with_gcem",
     hdrs = [
-        "include/gcem_units.h",
+        "include/ode/gcem_units.h",
     ],
     strip_include_prefix = "include",
     deps = [
