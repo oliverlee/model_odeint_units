@@ -15,7 +15,8 @@ namespace state_space {
 template <class State,
           class Input,
           class TransitionFunction,
-          class Scalar = units::unit_t<units::dimensionless::scalar, double>>
+          class Scalar = units::unit_t<units::dimensionless::scalar, double>,
+          class Duration = units::unit_t<units::time::seconds, double>>
 class system {
   public:
     static_assert(tmp::is_specialization_of<Input, vector>::value,
@@ -27,7 +28,7 @@ class system {
     using state = State;
     using deriv = typename State::template derivative<>;
     using scalar_type = Scalar;
-    using duration_type = typename State::duration_type;
+    using duration_type = Duration;
 
   private:
     template <class, class = void>
@@ -165,7 +166,7 @@ class system {
         return standard_form{tf_, u};
     }
 
-    template <template <class...> class Stepper, class System, class Duration, std::size_t N>
+    template <template <class...> class Stepper, class System, class IntegrationStep, std::size_t N>
     struct invoker {
         template <std::size_t I = N, std::enable_if_t<I == 0, bool> = true>
         constexpr auto operator()() const
@@ -176,25 +177,25 @@ class system {
         template <std::size_t I = N, std::enable_if_t<I != 0, bool> = true>
         constexpr auto operator()() const
         {
-            return invoker<Stepper, System, Duration, I - 1>{
+            return invoker<Stepper, System, IntegrationStep, I - 1>{
                 system, system.template integrate<Stepper>(x, u, dt), u, dt}();
         }
 
         const System& system;
         state x;
         input u;
-        Duration dt;
+        IntegrationStep dt;
     };
 
-    template <template <class...> class Stepper, class Duration, std::size_t... Is>
+    template <template <class...> class Stepper, class IntegrationStep, std::size_t... Is>
     constexpr auto make_trajectory_impl(const state& x0,
                                         const input& u,
-                                        Duration dt,
+                                        IntegrationStep dt,
                                         std::index_sequence<Is...>) const
-        -> std::array<std::pair<Duration, state>, sizeof...(Is)>
+        -> std::array<std::pair<IntegrationStep, state>, sizeof...(Is)>
     {
-        return {
-            std::make_pair(Is * dt, invoker<Stepper, system, Duration, Is>{*this, x0, u, dt}())...};
+        return {std::make_pair(
+            Is * dt, invoker<Stepper, system, IntegrationStep, Is>{*this, x0, u, dt}())...};
     }
 
     transition_function_type tf_;

@@ -28,7 +28,7 @@ using input = ode::state_space::vector<struct a,
 using deriv = state::derivative<>;
 
 const auto kinematic_bicycle = ode::state_space::make_system<state, input>(
-    [](const state& sx, const input& u, state::duration_type t) -> deriv {
+    [](const state& sx, const input& u, units::time::second_t t) -> deriv {
         (void)t;
 
         constexpr auto lf = 1.105_m;

@@ -29,7 +29,7 @@ using input = ode::state_space::vector<struct a,
 using deriv = state::derivative<1>;
 
 struct f {
-    constexpr auto operator()(const state& sx, const input& u, state::duration_type t) const
+    constexpr auto operator()(const state& sx, const input& u, units::time::second_t t) const
         -> deriv
     {
         (void)t;

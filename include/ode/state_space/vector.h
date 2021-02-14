@@ -26,6 +26,8 @@ struct elementwise_scalar_multiply {
     const Scalar scalar;
 };
 
+using implicit_duration_type = units::time::second_t;
+
 }  // namespace detail
 
 template <class... Args>
@@ -61,15 +63,6 @@ class vector {
                                               UnitDerivArgPair::second_type::value>::type;
     };
 
-    using first_underlying_type =
-        typename units::traits::unit_t_traits<tmp::front<values>>::underlying_type;
-
-    template <class T>
-    struct has_same_underlying_type {
-        using type = std::is_same<first_underlying_type,
-                                  typename units::traits::unit_t_traits<T>::underlying_type>;
-    };
-
   public:
     static_assert((sizeof...(Args) % 2) == 0,
                   "A vector requires an even number of template types.");
@@ -79,12 +72,8 @@ class vector {
     static_assert(
         tmp::rebind_outer<tmp::map<units::traits::is_unit_t, values>, tmp::conjunction>::value,
         "Vector value types must be a unit container.");
-    static_assert(
-        tmp::rebind_outer<tmp::map<has_same_underlying_type, values>, tmp::conjunction>::value,
-        "Vector value types must use the same underlying type.");
 
     using data_type = tmp::rebind_outer<values, std::tuple>;
-    using duration_type = units::unit_t<units::time::second, first_underlying_type>;
 
     static constexpr std::size_t size = sizeof...(Args) / 2;
 
@@ -133,7 +122,10 @@ class vector {
         return *this;
     }
 
-    constexpr auto operator*(duration_type dt) const -> derivative<-1>
+    template <class Duration>
+    constexpr auto operator*(Duration dt) const
+        -> std::enable_if_t<std::is_convertible<Duration, detail::implicit_duration_type>::value,
+                            derivative<-1>>
     {
         return multiply_by_time_impl(dt, std::make_index_sequence<size>{});
     }
@@ -166,8 +158,8 @@ class vector {
     }
 
     template <std::size_t... Is>
-    constexpr auto multiply_by_time_impl(duration_type dt, std::index_sequence<Is...>) const
-        -> derivative<-1>
+    constexpr auto multiply_by_time_impl(detail::implicit_duration_type dt,
+                                         std::index_sequence<Is...>) const -> derivative<-1>
     {
         auto integral = derivative<-1>{};
 
@@ -184,7 +176,8 @@ class vector {
 };
 
 template <class Vector>
-constexpr auto operator+(const Vector& x, const Vector& y) -> Vector
+constexpr auto operator+(const Vector& x, const Vector& y)
+    -> std::enable_if_t<tmp::is_specialization_of<Vector, vector>::value, Vector>
 {
     auto z = x;
     return z += y;
@@ -192,7 +185,9 @@ constexpr auto operator+(const Vector& x, const Vector& y) -> Vector
 
 template <class Scalar, class Vector>
 constexpr auto operator*(Scalar a, const Vector& x)
-    -> std::enable_if_t<units::traits::is_dimensionless_unit<Scalar>::value, Vector>
+    -> std::enable_if_t<tmp::is_specialization_of<Vector, vector>::value &&
+                            units::traits::is_dimensionless_unit<Scalar>::value,
+                        Vector>
 {
     auto y = x;
     return y *= a;
@@ -200,11 +195,12 @@ constexpr auto operator*(Scalar a, const Vector& x)
 
 template <class Duration, class Vector>
 constexpr auto operator*(Duration t, const Vector& x)
-    -> std::enable_if_t<!units::traits::is_dimensionless_unit<Duration>::value &&
-                            std::is_convertible<Duration, typename Vector::duration_type>::value,
+    -> std::enable_if_t<tmp::is_specialization_of<Vector, vector>::value &&
+                            !units::traits::is_dimensionless_unit<Duration>::value &&
+                            std::is_convertible<Duration, detail::implicit_duration_type>::value,
                         typename Vector::template derivative<-1>>
 {
-    return x * typename Vector::duration_type{t};
+    return x * t;
 }
 
 template <class Vector>
