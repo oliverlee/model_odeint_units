@@ -3,6 +3,7 @@
 #include "units.h"
 
 namespace ode {
+namespace odeint {
 
 template <class Unit>
 class unit_proxy {
@@ -27,4 +28,5 @@ auto operator<<(std::ostream& os, const UnitProxy& p)
     return os << typename UnitProxy::unit_type(p);
 }
 
+}  // namespace odeint
 }  // namespace ode

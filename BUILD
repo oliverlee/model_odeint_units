@@ -28,8 +28,8 @@ cc_library(
 cc_library(
     name = "ode_with_boost_odeint",
     hdrs = [
-        "include/ode/model.h",
-        "include/ode/unit_proxy.h",
+        "include/ode/odeint/model.h",
+        "include/ode/odeint/unit_proxy.h",
     ],
     strip_include_prefix = "include",
     deps = [

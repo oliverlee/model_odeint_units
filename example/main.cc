@@ -1,6 +1,6 @@
 #include "boost/numeric/odeint.hpp"
 #include "ode/iterator.h"
-#include "ode/model.h"
+#include "ode/odeint/model.h"
 #include "units.h"
 
 #include <iostream>
@@ -12,7 +12,7 @@ int main()
     using namespace std::literals::chrono_literals;
     namespace odeint = boost::numeric::odeint;
 
-    using Model = ode::model<double, std::ratio<1105, 1000>, std::ratio<1738, 1000>>;
+    using Model = ode::odeint::model<double, std::ratio<1105, 1000>, std::ratio<1738, 1000>>;
 
     std::cout << std::left << std::setprecision(3) << std::fixed;
     std::cout << Model{} << std::endl;

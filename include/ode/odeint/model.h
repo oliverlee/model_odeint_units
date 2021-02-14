@@ -1,8 +1,8 @@
 #pragma once
 
 #include "boost/numeric/odeint.hpp"
+#include "ode/odeint/unit_proxy.h"
 #include "ode/tmp/type_traits.h"
-#include "ode/unit_proxy.h"
 #include "units.h"
 
 #include <array>
@@ -11,6 +11,7 @@
 #include <ratio>
 
 namespace ode {
+namespace odeint {
 
 namespace detail {
 
@@ -197,4 +198,5 @@ auto operator<<(std::ostream& os, const State& s)
     return os << "{" << s.x << ", " << s.y << ", " << s.yaw << ", " << s.v << "}";
 }
 
+}  // namespace odeint
 }  // namespace ode
