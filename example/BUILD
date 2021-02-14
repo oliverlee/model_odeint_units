@@ -3,9 +3,9 @@ COPTS = [
 ]
 
 cc_binary(
-    name = "main",
+    name = "odeint_model",
     srcs = [
-        "main.cc",
+        "odeint_model.cc",
     ],
     deps = [
         "//:ode_with_boost_odeint",
@@ -14,9 +14,9 @@ cc_binary(
 )
 
 cc_binary(
-    name = "main2",
+    name = "odeint_state_space",
     srcs = [
-        "main2.cc",
+        "odeint_state_space.cc",
     ],
     deps = [
         "//:ode_with_boost_odeint",
@@ -25,9 +25,9 @@ cc_binary(
 )
 
 cc_binary(
-    name = "main3",
+    name = "ode_range",
     srcs = [
-        "main3.cc",
+        "ode_range.cc",
     ],
     deps = [
         "//:ode",
@@ -36,9 +36,9 @@ cc_binary(
 )
 
 cc_binary(
-    name = "main4",
+    name = "ode_constexpr",
     srcs = [
-        "main4.cc",
+        "ode_constexpr.cc",
     ],
     deps = [
         "//:ode_with_gcem",
