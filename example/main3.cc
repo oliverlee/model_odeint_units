@@ -1,4 +1,3 @@
-#include "ode/gcem_units.h"
 #include "ode/iterator.h"
 #include "ode/state_space/system.h"
 #include "ode/state_space/vector.h"
@@ -26,28 +25,25 @@ using input = ode::state_space::vector<struct a,
                                        units::acceleration::meters_per_second_squared_t,
                                        struct deltaf,
                                        units::angle::radian_t>;
-using deriv = state::derivative<1>;
+using deriv = state::derivative<>;
 
-struct f {
-    constexpr auto operator()(const state& sx, const input& u, state::duration_type t) const
-        -> deriv
-    {
+const auto kinematic_bicycle = ode::state_space::make_system<state, input>(
+    [](const state& sx, const input& u, state::duration_type t) -> deriv {
         (void)t;
 
         constexpr auto lf = 1.105_m;
         constexpr auto lr = 1.738_m;
 
         const auto beta =
-            ode::math::atan(lr / (lf + lr) * ode::math::tan(u.template get<deltaf>()));
+            units::math::atan(lr / (lf + lr) * units::math::tan(u.template get<deltaf>()));
 
-        return {sx.template get<v>() * ode::math::cos(sx.template get<yaw>() + beta),
-                sx.template get<v>() * ode::math::sin(sx.template get<yaw>() + beta),
-                sx.template get<v>() / lr * ode::math::sin(beta) * 1_rad,
+        return {sx.template get<v>() * units::math::cos(sx.template get<yaw>() + beta),
+                sx.template get<v>() * units::math::sin(sx.template get<yaw>() + beta),
+                sx.template get<v>() / lr * units::math::sin(beta) * 1_rad,
                 u.template get<a>()};
     }
-};
 
-constexpr auto kinematic_bicycle = ode::state_space::make_system<state, input>(f{});
+);
 
 }  // namespace
 

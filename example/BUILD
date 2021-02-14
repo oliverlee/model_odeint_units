@@ -30,7 +30,7 @@ cc_binary(
         "main3.cc",
     ],
     deps = [
-        "//:ode_with_gcem",
+        "//:ode",
     ],
     copts = COPTS,
 )
