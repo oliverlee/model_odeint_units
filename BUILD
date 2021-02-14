@@ -1,77 +1,51 @@
-UNITS_DEFINES = [
-    "DISABLE_PREDEFINED_UNITS",
-    "ENABLE_PREDEFINED_LENGTH_UNITS",
-    "ENABLE_PREDEFINED_TIME_UNITS",
-    "ENABLE_PREDEFINED_VELOCITY_UNITS",
-    "ENABLE_PREDEFINED_ACCELERATION_UNITS",
-    "ENABLE_PREDEFINED_ANGLE_UNITS",
-    "ENABLE_PREDEFINED_ANGULAR_VELOCITY_UNITS",
-]
+package(default_visibility = ["//example:__pkg__"])
 
-COMMON_HEADERS = [
-    "include/gcem_units.h",
-    "include/iterator.h",
-    "include/state_space/system.h",
-    "include/state_space/vector.h",
-    "include/stepper.h",
-    "include/type_mapping.h",
-    "include/type_traits.h",
-]
-
-cc_binary(
-    name = "main",
-    srcs = [
+cc_library(
+    name = "ode",
+    hdrs = [
         "include/iterator.h",
-        "include/model.h",
+        "include/state_space/system.h",
+        "include/state_space/vector.h",
         "include/stepper.h",
+        "include/type_mapping.h",
         "include/type_traits.h",
+    ],
+    strip_include_prefix = "include",
+    defines = [
+        "DISABLE_PREDEFINED_UNITS",
+        "ENABLE_PREDEFINED_LENGTH_UNITS",
+        "ENABLE_PREDEFINED_TIME_UNITS",
+        "ENABLE_PREDEFINED_VELOCITY_UNITS",
+        "ENABLE_PREDEFINED_ACCELERATION_UNITS",
+        "ENABLE_PREDEFINED_ANGLE_UNITS",
+        "ENABLE_PREDEFINED_ANGULAR_VELOCITY_UNITS",
+    ],
+    deps = [
+        "@units",
+    ],
+)
+
+cc_library(
+    name = "ode_with_boost_odeint",
+    hdrs = [
+        "include/model.h",
         "include/unit_proxy.h",
-        "main.cc",
     ],
-    includes = ["include"],
+    strip_include_prefix = "include",
     deps = [
+        "//:ode",
         "@boost//:numeric_odeint",
-        "@units",
     ],
-    defines = UNITS_DEFINES,
 )
 
-cc_binary(
-    name = "main2",
-    srcs = COMMON_HEADERS + [
-        "main2.cc",
+cc_library(
+    name = "ode_with_gcem",
+    hdrs = [
+        "include/gcem_units.h",
     ],
-    includes = ["include"],
+    strip_include_prefix = "include",
     deps = [
-        "@boost//:numeric_odeint",
+        "//:ode",
         "@gcem",
-        "@units",
     ],
-    defines = UNITS_DEFINES,
-)
-
-cc_binary(
-    name = "main3",
-    srcs = COMMON_HEADERS + [
-        "main3.cc",
-    ],
-    includes = ["include"],
-    deps = [
-        "@gcem",
-        "@units",
-    ],
-    defines = UNITS_DEFINES,
-)
-
-cc_binary(
-    name = "main4",
-    srcs = COMMON_HEADERS + [
-        "main4.cc",
-    ],
-    includes = ["include"],
-    deps = [
-        "@gcem",
-        "@units",
-    ],
-    defines = UNITS_DEFINES,
 )

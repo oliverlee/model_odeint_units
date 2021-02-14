@@ -1,4 +1,3 @@
-build --cxxopt='-std=c++14'
 build --verbose_failures
 build --show_result='100'
 build --action_env=CC
